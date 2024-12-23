@@ -1,11 +1,11 @@
 mod settings;
 
+use crate::settings::{get_settings, set_preferred_language, set_theme, set_wrap_lines, Settings};
 use tauri::async_runtime::Mutex;
 use tauri::menu::{AboutMetadataBuilder, Menu, MenuItemBuilder, SubmenuBuilder};
 use tauri::Error::WebviewLabelAlreadyExists;
 use tauri::{App, Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 use tauri_plugin_store::StoreExt;
-use crate::settings::{get_settings, set_preferred_language, set_theme, set_wrap_lines, Settings};
 
 fn setup_menu(app: &mut App) -> Result<(), tauri::Error> {
     let settings = MenuItemBuilder::new("Settings...")
@@ -69,9 +69,7 @@ fn setup_menu(app: &mut App) -> Result<(), tauri::Error> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|_, _, _| {
-
-        }))
+        .plugin(tauri_plugin_single_instance::init(|_, _, _| {}))
         .plugin(
             tauri_plugin_log::Builder::new()
                 .clear_targets()
@@ -101,9 +99,11 @@ pub fn run() {
             .build()?;
             Ok(())
         })
-        .on_window_event(|window, event| if let WindowEvent::Destroyed = event {
-            if window.label() == "main" {
-                window.app_handle().exit(0);
+        .on_window_event(|window, event| {
+            if let WindowEvent::Destroyed = event {
+                if window.label() == "main" {
+                    window.app_handle().exit(0);
+                }
             }
         })
         .plugin(tauri_plugin_opener::init())

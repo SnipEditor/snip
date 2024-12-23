@@ -1,7 +1,7 @@
-use std::ops::Deref;
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Emitter};
+use std::ops::Deref;
 use tauri::async_runtime::Mutex;
+use tauri::{AppHandle, Emitter};
 use tauri_plugin_store::StoreExt;
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -32,7 +32,7 @@ impl Default for Settings {
         Self {
             theme: Theme::System,
             preferred_language: settings_default_preferred_language(),
-            wrap_lines: settings_default_wrap_lines()
+            wrap_lines: settings_default_wrap_lines(),
         }
     }
 }
@@ -43,7 +43,7 @@ pub async fn get_settings(state: tauri::State<'_, Mutex<Settings>>) -> Result<Se
     Ok(state.clone())
 }
 
-pub fn save_settings(app: AppHandle, settings: &Settings) -> Result<Settings, ()>  {
+pub fn save_settings(app: AppHandle, settings: &Settings) -> Result<Settings, ()> {
     let store = app.store("settings.json").expect("failed to get store");
     store.set(
         "settings",

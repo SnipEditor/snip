@@ -2,10 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-[data-color-scheme="dark"] {
-    color-scheme: dark;
+[data-color-scheme='dark'] {
+  color-scheme: dark;
 }
 
-[data-color-scheme="light"] {
-    color-scheme: light;
+[data-color-scheme='light'] {
+  color-scheme: light;
 }
