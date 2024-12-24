@@ -33,7 +33,7 @@ export default function Checkbox({ title, value, onChange }: CheckboxProps) {
       >
         <span
           aria-hidden="true"
-          className="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out group-data-[checked]:translate-x-5"
+          className="pointer-events-none inline-block size-5 rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out group-data-[checked]:translate-x-5"
         />
       </Switch>
     </Field>

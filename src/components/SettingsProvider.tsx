@@ -8,7 +8,7 @@ export default function SettingsProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     let unlistenFn: UnlistenFn | undefined
-    ;(async () => {
+    void (async () => {
       setSettings(await invoke('get_settings'))
 
       unlistenFn = await listen<Settings>('settings_update', (event) => {

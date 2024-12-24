@@ -13,7 +13,7 @@ function Settings() {
 
   return (
     <div
-      className="size-full flex flex-col p-8 gap-4"
+      className="flex size-full flex-col gap-4 p-8"
       style={{ backgroundColor: theme.background }}
     >
       <Dropdown

@@ -17,7 +17,7 @@ export default function useTheme() {
 
   useEffect(() => {
     let unlisten: UnlistenFn | undefined
-    ;(async () => {
+    void (async () => {
       const window = getCurrentWindow()
       setSystemTheme((await window.theme()) ?? 'light')
 

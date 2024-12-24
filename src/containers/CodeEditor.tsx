@@ -56,8 +56,8 @@ function CodeEditor() {
   const sortedLanguages = useSortedLanguages()
 
   return (
-    <div className="size-full grid grid-rows-[1fr_auto]">
-      <div className="overflow-auto h-full overscroll-contain">
+    <div className="grid size-full grid-rows-[1fr_auto]">
+      <div className="h-full overflow-auto overscroll-contain">
         <CodeMirror
           onUpdate={onUpdateHandler}
           extensions={extensions}

@@ -10,7 +10,6 @@ export default function ThemeMetaSwitcher({ children }: PropsWithChildren) {
       theme.isDark ? 'dark' : 'light',
     )
     // trigger reflow so that overflow style is applied
-    document.body.clientWidth
     document.documentElement.style.display = ''
   }, [theme.isDark])
   return children
