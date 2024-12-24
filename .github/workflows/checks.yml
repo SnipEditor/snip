@@ -1,4 +1,4 @@
-name: Linting and formatting checks
+name: checks
 on:
   push:
   pull_request:
@@ -18,7 +18,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
-          cache: 'yarn' # Set this to npm, yarn or pnpm.
+          cache: 'yarn'
 
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
