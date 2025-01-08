@@ -3,13 +3,12 @@ use crate::scripts::loader::scripts::{Command, ScriptManager};
 use crate::window::{WindowTask, Windows};
 use deno_core::error::AnyError;
 use deno_core::{
-    ascii_str, extension, op2, v8, JsRuntime, ModuleSpecifier, OpState, Resource, ResourceId,
+    extension, op2, v8, JsRuntime, OpState, Resource, ResourceId,
     RuntimeOptions,
 };
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::str::FromStr;
 use tauri::ipc::Channel;
 use tauri::State;
 use tokio::sync::mpsc::channel;
@@ -108,8 +107,7 @@ pub async fn run_script_command(
     let command = {
         let script_manager = &script_manager.lock().await;
         script_manager
-            .find_command_by_id(command_id.as_str())
-            .map(|e| e.clone())
+            .find_command_by_id(command_id.as_str()).cloned()
     };
 
     if command.is_none() {
@@ -345,7 +343,6 @@ pub async fn handle_script_run(
             .send(ScriptRunEditorRequest::Error(result.unwrap_err()))
             .await
             .expect("Could not send error back to tauri");
-        return;
     }
 }
 

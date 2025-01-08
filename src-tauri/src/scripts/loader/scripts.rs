@@ -6,7 +6,6 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Error, ErrorKind};
 use std::path::PathBuf;
-use std::str::FromStr;
 use sublime_fuzzy::best_match;
 use tokio::fs::metadata;
 use tokio::io::AsyncReadExt;
@@ -59,13 +58,13 @@ impl ScriptManager {
 
     pub fn find_commands_by_title(&self, search_term: &str) -> Vec<CommandSearchResult> {
         let mut commands = vec![];
-        for (_, command) in &self.scripts {
+        for command in self.scripts.values() {
             let m = best_match(search_term, command.info.title.as_str());
             if let Some(m) = m {
                 let result = CommandSearchResult {
                     command,
                     score: m.score(),
-                    matched_indices: m.matched_indices().map(|e| e.clone()).collect(),
+                    matched_indices: m.matched_indices().copied().collect(),
                 };
                 commands.push(result);
             }
