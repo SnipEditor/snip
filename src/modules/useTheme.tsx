@@ -43,6 +43,7 @@ export default function useTheme() {
       isDark: true,
       extension: tokyoNightStorm,
       background: defaultSettingsTokyoNightStorm.background,
+      backgroundHighlight: defaultSettingsTokyoNightStorm.lineHighlight,
       textColor: defaultSettingsTokyoNightStorm.gutterForeground,
     }
   } else {
@@ -50,6 +51,7 @@ export default function useTheme() {
       isDark: false,
       extension: tokyoNightDay,
       background: defaultSettingsTokyoNightDay.background,
+      backgroundHighlight: defaultSettingsTokyoNightDay.lineHighlight,
       textColor: defaultSettingsTokyoNightDay.gutterForeground,
     }
   }

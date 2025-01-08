@@ -2,10 +2,12 @@ import CodeMirror, {
   BasicSetupOptions,
   EditorView,
   Extension,
+  ReactCodeMirrorRef,
   ViewUpdate,
 } from '@uiw/react-codemirror'
 import { langs } from '@uiw/codemirror-extensions-langs'
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
+import { platform } from '@tauri-apps/plugin-os'
 import useTheme from '../modules/useTheme.tsx'
 import {
   LanguageKey,
@@ -13,6 +15,12 @@ import {
   useSortedLanguages,
 } from '../modules/languageKey.ts'
 import { useSettings } from '../context/settings.ts'
+import useScriptCommandSelector from '../modules/useScriptCommandSelector.ts'
+import SearchOverlay from '../components/SearchOverlay.tsx'
+import useScriptCommandRunner from '../modules/useScriptCommandRunner.ts'
+
+const currentPlatform = platform()
+const scriptStatusShortcutText = `Press ${currentPlatform === 'macos' ? '⌘' : 'Ctrl'}+B to start an action`
 
 function CodeEditor() {
   const settings = useSettings()
@@ -54,6 +62,19 @@ function CodeEditor() {
   const theme = useTheme()
 
   const sortedLanguages = useSortedLanguages()
+  const { isOpen: scriptSelectorIsOpen, close: closeScriptSelector } =
+    useScriptCommandSelector()
+
+  const [editorRef, setEditorRef] = useState<ReactCodeMirrorRef | null>()
+  const onRunScript = useCallback(
+    (scriptId: string) => {
+      if (!editorRef) {
+        return
+      }
+      useScriptCommandRunner(scriptId, editorRef)
+    },
+    [editorRef],
+  )
 
   return (
     <div className="grid size-full grid-rows-[1fr_auto]">
@@ -66,15 +87,16 @@ function CodeEditor() {
           theme={theme.extension}
           basicSetup={basicSetup}
           autoFocus
+          ref={setEditorRef}
         />
       </div>
       <div
-        className="flex justify-between"
+        className="grid grid-cols-3 p-2"
         style={{
           backgroundColor: theme.background,
         }}
       >
-        <div className="m-2">
+        <div className="m-0">
           <select
             value={currentLanguage}
             onChange={(e) =>
@@ -88,8 +110,20 @@ function CodeEditor() {
             ))}
           </select>
         </div>
+        <div className="m-0 text-center">
+          <span
+            style={{
+              backgroundColor: theme.backgroundHighlight,
+              color: theme.textColor,
+            }}
+          >
+            {scriptSelectorIsOpen
+              ? 'Select your action'
+              : scriptStatusShortcutText}
+          </span>
+        </div>
         <div
-          className="m-2"
+          className="m-0 text-right"
           style={{
             color: theme.textColor,
           }}
@@ -97,6 +131,12 @@ function CodeEditor() {
           {cursorPosLine}:{cursorPosCh + 1}
         </div>
       </div>
+      {scriptSelectorIsOpen && (
+        <SearchOverlay
+          onClose={closeScriptSelector}
+          onRunScript={onRunScript}
+        />
+      )}
     </div>
   )
 }
