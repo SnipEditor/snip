@@ -8,6 +8,7 @@ use deno_core::{
 };
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::rc::Rc;
 use tauri::ipc::Channel;
 use tauri::State;
@@ -61,35 +62,52 @@ pub struct Script<'a> {
     location: &'a str,
 }
 
-#[derive(Clone, Serialize, Debug)]
+#[derive(Clone, Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase", tag = "event", content = "data")]
 pub enum ScriptRunEditorRequestEvent {
     #[serde(rename_all = "camelCase")]
     GetFullText,
     #[serde(rename_all = "camelCase")]
     SetFullText(String),
+    #[serde(rename_all = "camelCase")]
+    SetError(String),
 }
 
-#[derive(Clone, Serialize, Debug)]
+#[derive(Clone, Deserialize, Serialize, Debug)]
+pub struct ScriptRunEditorRequest {
+    id: Option<u64>,
+    #[serde(flatten)]
+    event: ScriptRunEditorRequestEvent,
+}
+
+#[derive(Clone, Deserialize, Serialize, Debug)]
+pub struct ScriptRunEditorResponse {
+    id: u64,
+    #[serde(flatten)]
+    event: InternalScriptRunEditorResponse,
+}
+
+#[derive(Clone, Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase", tag = "event", content = "data")]
-pub enum ScriptRunEditorResponse {
+pub enum InternalScriptRunEditorResponse {
     #[serde(rename_all = "camelCase")]
     GetFullText(String),
 }
 
 #[derive(Debug)]
-pub enum ScriptRunEditorRequest {
+pub enum InternalScriptRunEditorRequest {
     Request(ScriptRunEditorRequestEvent),
     RequestWithResponse {
         event: ScriptRunEditorRequestEvent,
-        reply_sender: Sender<ScriptRunEditorResponse>,
+        reply_sender: Sender<InternalScriptRunEditorResponse>,
     },
     Error(String),
 }
 
 #[derive(Default)]
 pub struct WindowScriptState {
-    get_full_text_reply_sender: Option<Sender<ScriptRunEditorResponse>>,
+    reply_senders: HashMap<u64, Sender<InternalScriptRunEditorResponse>>,
+    last_given_id: u64,
 }
 
 #[tauri::command]
@@ -98,11 +116,11 @@ pub async fn run_script_command(
     script_manager: State<'_, Mutex<ScriptManager>>,
     webview_window: tauri::WebviewWindow,
     command_id: String,
-    editor_request_channel: Channel<ScriptRunEditorRequestEvent>,
+    editor_request_channel: Channel<ScriptRunEditorRequest>,
 ) -> Result<(), String> {
     let window_label = webview_window.label().to_string();
 
-    let (sender, mut receiver) = channel::<ScriptRunEditorRequest>(1);
+    let (sender, mut receiver) = channel::<InternalScriptRunEditorRequest>(1);
 
     let command = {
         let script_manager = &script_manager.lock().await;
@@ -129,8 +147,11 @@ pub async fn run_script_command(
         let request = receiver.recv().await;
         if let Some(request) = request {
             let event = match request {
-                ScriptRunEditorRequest::Request(event) => event,
-                ScriptRunEditorRequest::RequestWithResponse {
+                InternalScriptRunEditorRequest::Request(event) => ScriptRunEditorRequest{
+                    id: None,
+                    event
+                },
+                InternalScriptRunEditorRequest::RequestWithResponse {
                     event,
                     reply_sender,
                 } => {
@@ -138,10 +159,15 @@ pub async fn run_script_command(
                     let script_state = state
                         .get_script_state(&window_label)
                         .expect("Window should have script state");
-                    script_state.get_full_text_reply_sender = Some(reply_sender);
-                    event
+                    let id = script_state.last_given_id;
+                    script_state.last_given_id = id + 1;
+                    script_state.reply_senders.insert(id, reply_sender);
+                    ScriptRunEditorRequest{
+                        id: Some(id),
+                        event
+                    }
                 }
-                ScriptRunEditorRequest::Error(e) => {
+                InternalScriptRunEditorRequest::Error(e) => {
                     println!("Received error: {}", e);
                     return Err(e);
                 }
@@ -156,33 +182,33 @@ pub async fn run_script_command(
 }
 
 #[tauri::command]
-pub async fn reply_editor_get_full_text(
+pub async fn reply_editor_request(
     state: State<'_, Mutex<Windows>>,
     webview_window: tauri::WebviewWindow,
-    full_text: String,
+    reply: ScriptRunEditorResponse,
 ) -> Result<(), String> {
     let state = &mut state.lock().await;
     let script_state = state
         .get_script_state(&webview_window.label().to_string())
         .expect("Window should have script state");
 
-    let reply_sender = script_state.get_full_text_reply_sender.take();
+    let reply_sender = script_state.reply_senders.remove(&reply.id);
     if let Some(sender) = reply_sender {
         sender
-            .send(ScriptRunEditorResponse::GetFullText(full_text))
-            .map_err(|e| "Could not send response".to_string())?;
+            .send(reply.event)
+            .map_err(|_| "Could not send response".to_string())?;
         Ok(())
     } else {
-        Err("No reply sender found. Ensure you received a request for this reply".to_string())
+        Err("No reply sender found for the given id".to_string())
     }
 }
 
 pub enum ScriptTask {
-    RunCommand(Command, mpsc::Sender<ScriptRunEditorRequest>),
+    RunCommand(Command, mpsc::Sender<InternalScriptRunEditorRequest>),
 }
 
 struct EditorHandle {
-    editor_request_channel: mpsc::Sender<ScriptRunEditorRequest>,
+    editor_request_channel: mpsc::Sender<InternalScriptRunEditorRequest>,
 }
 
 impl Resource for EditorHandle {}
@@ -206,9 +232,9 @@ async fn snip_op_get_full_text(
         }
     }?;
 
-    let (sender, receiver) = oneshot::channel::<ScriptRunEditorResponse>();
+    let (sender, receiver) = oneshot::channel::<InternalScriptRunEditorResponse>();
     let request = request_channel
-        .send(ScriptRunEditorRequest::RequestWithResponse {
+        .send(InternalScriptRunEditorRequest::RequestWithResponse {
             event: ScriptRunEditorRequestEvent::GetFullText,
             reply_sender: sender,
         })
@@ -220,7 +246,7 @@ async fn snip_op_get_full_text(
     let response = receiver
         .await
         .map_err(|err| AnyError::msg(err.to_string()))?;
-    if let ScriptRunEditorResponse::GetFullText(fulltext) = response {
+    if let InternalScriptRunEditorResponse::GetFullText(fulltext) = response {
         Ok(fulltext)
     } else {
         Err(AnyError::msg("Received incorrect response"))
@@ -247,8 +273,39 @@ async fn snip_op_set_full_text(
     }?;
 
     let request = request_channel
-        .send(ScriptRunEditorRequest::Request(
+        .send(InternalScriptRunEditorRequest::Request(
             ScriptRunEditorRequestEvent::SetFullText(full_text),
+        ))
+        .await;
+    if let Err(err) = request {
+        return Err(AnyError::msg(err.to_string()));
+    }
+
+    Ok(())
+}
+
+#[op2(async)]
+async fn snip_op_set_error(
+    state: Rc<RefCell<OpState>>,
+    editor_handle: u32,
+    #[string] error: String,
+) -> Result<(), AnyError> {
+    let request_channel = {
+        let editor_handle_result = state
+            .borrow()
+            .resource_table
+            .get::<EditorHandle>(editor_handle);
+        if let Ok(editor_handle) = &editor_handle_result {
+            let channel = editor_handle.editor_request_channel.clone();
+            Ok(channel)
+        } else {
+            Err(AnyError::msg("Invalid editor handle"))
+        }
+    }?;
+
+    let request = request_channel
+        .send(InternalScriptRunEditorRequest::Request(
+            ScriptRunEditorRequestEvent::SetError(error),
         ))
         .await;
     if let Err(err) = request {
@@ -262,7 +319,8 @@ extension!(
     snip,
     ops = [
         snip_op_get_full_text,
-        snip_op_set_full_text
+        snip_op_set_full_text,
+        snip_op_set_error,
     ],
     esm_entry_point = "ext:snip/index.ts",
     esm = [dir "js_runtime/snip", "index.ts"]
@@ -312,7 +370,7 @@ async fn load_and_run_module(js_runtime: &mut JsRuntime, command: Command) -> Re
 
 pub async fn handle_script_run(
     command: Command,
-    editor_request_channel: mpsc::Sender<ScriptRunEditorRequest>,
+    editor_request_channel: mpsc::Sender<InternalScriptRunEditorRequest>,
 ) {
     let mut js_runtime = JsRuntime::new(RuntimeOptions {
         module_loader: Some(Rc::new(SnipModuleLoader)),
@@ -332,7 +390,7 @@ pub async fn handle_script_run(
     let result = install_editor_handle_id(&mut js_runtime, editor_handle_resource_id);
     if result.is_err() {
         editor_request_channel
-            .send(ScriptRunEditorRequest::Error(result.unwrap_err()))
+            .send(InternalScriptRunEditorRequest::Error(result.unwrap_err()))
             .await
             .expect("Could not send error back to tauri");
         return;
@@ -340,7 +398,7 @@ pub async fn handle_script_run(
     let result = load_and_run_module(&mut js_runtime, command).await;
     if result.is_err() {
         editor_request_channel
-            .send(ScriptRunEditorRequest::Error(result.unwrap_err()))
+            .send(InternalScriptRunEditorRequest::Error(result.unwrap_err()))
             .await
             .expect("Could not send error back to tauri");
     }

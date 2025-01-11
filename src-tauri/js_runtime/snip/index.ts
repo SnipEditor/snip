@@ -27,6 +27,12 @@
             // @ts-ignore
             await Deno.core.ops.snip_op_set_full_text(editorHandle, text)
         }
+
+        public async setError(error: string) {
+            const editorHandle = this.getEditorHandle()
+            // @ts-ignore
+            await Deno.core.ops.snip_op_set_error(editorHandle, error)
+        }
     }
     // @ts-ignore
     globalThis.Editor = new Editor()

@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core'
 
 export interface SearchOverlayProps {
   onClose: () => void
-  onRunScript: (scriptId: string) => void
+  onRunCommand: (scriptId: string) => void
 }
 
 interface Command {
@@ -24,7 +24,7 @@ const stopPropagationClickHandler: MouseEventHandler<HTMLDivElement> = (e) => {
 
 export default function SearchOverlay({
   onClose,
-  onRunScript,
+  onRunCommand,
 }: SearchOverlayProps) {
   const [matchingScripts, setMatchingScripts] = useState<CommandSearchResult[]>(
     [],
@@ -51,7 +51,7 @@ export default function SearchOverlay({
                 break
               case 'Enter':
                 if (matchingScripts.length > 0) {
-                  onRunScript(matchingScripts[0].command.id)
+                  onRunCommand(matchingScripts[0].command.id)
                   onClose()
                 }
                 break
@@ -79,7 +79,7 @@ export default function SearchOverlay({
           <a
             className="h-16 border-2 bg-black"
             onClick={() => {
-              onRunScript(searchResult.command.id)
+              onRunCommand(searchResult.command.id)
               onClose()
             }}
           >

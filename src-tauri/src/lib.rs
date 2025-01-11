@@ -2,9 +2,7 @@ mod scripts;
 mod settings;
 mod window;
 
-use crate::scripts::commands::{
-    get_script_commands, reply_editor_get_full_text, run_script_command,
-};
+use crate::scripts::commands::{get_script_commands, reply_editor_request, run_script_command};
 use crate::scripts::loader::scripts::ScriptManager;
 use crate::settings::{get_settings, set_preferred_language, set_theme, set_wrap_lines, Settings};
 use crate::window::Windows;
@@ -177,7 +175,7 @@ pub fn run() {
             set_wrap_lines,
             get_script_commands,
             run_script_command,
-            reply_editor_get_full_text,
+            reply_editor_request,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -6,8 +6,7 @@ import CodeMirror, {
   ViewUpdate,
 } from '@uiw/react-codemirror'
 import { langs } from '@uiw/codemirror-extensions-langs'
-import { useCallback, useMemo, useState } from 'react'
-import { platform } from '@tauri-apps/plugin-os'
+import { useMemo, useState } from 'react'
 import useTheme from '../modules/useTheme.tsx'
 import {
   LanguageKey,
@@ -18,9 +17,7 @@ import { useSettings } from '../context/settings.ts'
 import useScriptCommandSelector from '../modules/useScriptCommandSelector.ts'
 import SearchOverlay from '../components/SearchOverlay.tsx'
 import useScriptCommandRunner from '../modules/useScriptCommandRunner.ts'
-
-const currentPlatform = platform()
-const scriptStatusShortcutText = `Press ${currentPlatform === 'macos' ? '⌘' : 'Ctrl'}+B to start an action`
+import CommandStatus from "../components/CommandStatus.tsx";
 
 function CodeEditor() {
   const settings = useSettings()
@@ -48,8 +45,20 @@ function CodeEditor() {
     [],
   )
 
+    const { isOpen: commandPickerIsOpen, close: closeScriptSelector } =
+        useScriptCommandSelector()
+
+    const [editorRef, setEditorRef] = useState<ReactCodeMirrorRef | null>(null)
+    const {
+        isRunning: commandIsRunning,
+        error: commandRunError,
+        triggerCommand
+    } = useScriptCommandRunner(editorRef)
+
   const extensions = useMemo(() => {
-    const extensions: Extension[] = []
+    const extensions: Extension[] = [
+        EditorView.editable.of(!commandIsRunning),
+    ]
     if (settings.wrap_lines) {
       extensions.push(EditorView.lineWrapping)
     }
@@ -57,24 +66,11 @@ function CodeEditor() {
       extensions.push(langs[languages[currentLanguage].highlightKey]())
     }
     return extensions
-  }, [settings.wrap_lines, currentLanguage])
+  }, [settings.wrap_lines, currentLanguage, commandIsRunning])
 
   const theme = useTheme()
 
   const sortedLanguages = useSortedLanguages()
-  const { isOpen: scriptSelectorIsOpen, close: closeScriptSelector } =
-    useScriptCommandSelector()
-
-  const [editorRef, setEditorRef] = useState<ReactCodeMirrorRef | null>()
-  const onRunScript = useCallback(
-    (scriptId: string) => {
-      if (!editorRef) {
-        return
-      }
-      useScriptCommandRunner(scriptId, editorRef)
-    },
-    [editorRef],
-  )
 
   return (
     <div className="grid size-full grid-rows-[1fr_auto]">
@@ -88,6 +84,7 @@ function CodeEditor() {
           basicSetup={basicSetup}
           autoFocus
           ref={setEditorRef}
+          readOnly={commandIsRunning}
         />
       </div>
       <div
@@ -111,16 +108,7 @@ function CodeEditor() {
           </select>
         </div>
         <div className="m-0 text-center">
-          <span
-            style={{
-              backgroundColor: theme.backgroundHighlight,
-              color: theme.textColor,
-            }}
-          >
-            {scriptSelectorIsOpen
-              ? 'Select your action'
-              : scriptStatusShortcutText}
-          </span>
+            <CommandStatus running={commandIsRunning} error={commandRunError} pickerOpen={commandPickerIsOpen}/>
         </div>
         <div
           className="m-0 text-right"
@@ -131,10 +119,10 @@ function CodeEditor() {
           {cursorPosLine}:{cursorPosCh + 1}
         </div>
       </div>
-      {scriptSelectorIsOpen && (
+      {commandPickerIsOpen && (
         <SearchOverlay
           onClose={closeScriptSelector}
-          onRunScript={onRunScript}
+          onRunCommand={triggerCommand}
         />
       )}
     </div>
