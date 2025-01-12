@@ -1,6 +1,6 @@
 import {platform} from "@tauri-apps/plugin-os";
-import useTheme from "../modules/useTheme.tsx";
 import {useMemo} from "react";
+import cn from "../modules/classnames.ts";
 
 const currentPlatform = platform()
 const scriptStatusShortcutText = `Press ${currentPlatform === 'macos' ? '⌘' : 'Ctrl'}+B to start a command`
@@ -16,8 +16,6 @@ export default function CommandStatus({
     running,
     error
 }: CommandStatusProps) {
-    const theme = useTheme()
-
     const statusText = useMemo(() => {
         if (pickerOpen) {
             return 'Select a command'
@@ -31,14 +29,16 @@ export default function CommandStatus({
         return scriptStatusShortcutText
     }, [pickerOpen, running, error])
 
+    const classNames = useMemo(() => cn(
+        'flex-1 bg-theme-300 rounded-xl m-1 p-1 px-3 justify-center max-w-96 text-theme-700 text-center truncate',
+        error && !pickerOpen && 'bg-red-800 text-white',
+    ), [error, pickerOpen])
+
     return (
-        <span
-            style={{
-                backgroundColor: theme.backgroundHighlight,
-                color: theme.textColor,
-            }}
-        >
-            {statusText}
+        <div className="flex flex-row justify-center">
+            <span className={classNames}>
+                {statusText}
           </span>
+        </div>
     )
 }

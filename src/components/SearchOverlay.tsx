@@ -1,9 +1,10 @@
 import { MouseEventHandler, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
+import cn from "../modules/classnames.ts";
 
 export interface SearchOverlayProps {
   onClose: () => void
-  onRunCommand: (scriptId: string) => void
+  onRunCommand: (scriptId: string) => (void | Promise<void>)
 }
 
 interface Command {
@@ -36,13 +37,13 @@ export default function SearchOverlay({
       onClick={() => onClose()}
     >
       <div
-        className="mt-32 flex w-96 flex-col"
+        className="mt-32 h-fit w-96"
         onClick={stopPropagationClickHandler}
       >
         <input
           type="text"
           placeholder="Start typing..."
-          className="w-full"
+          className="w-full rounded-xl border-2 border-theme-600 bg-theme-50 p-2 px-3 text-lg text-theme-950 placeholder:text-theme-600 focus:border-theme-800 focus:outline-none"
           // onBlur={onClose}
           onKeyUp={(e) => {
             switch (e.key) {
@@ -51,7 +52,7 @@ export default function SearchOverlay({
                 break
               case 'Enter':
                 if (matchingScripts.length > 0) {
-                  onRunCommand(matchingScripts[0].command.id)
+                  void onRunCommand(matchingScripts[0].command.id)
                   onClose()
                 }
                 break
@@ -75,18 +76,31 @@ export default function SearchOverlay({
           }}
           autoFocus
         />
-        {matchingScripts.map((searchResult) => (
-          <a
-            className="h-16 border-2 bg-black"
-            onClick={() => {
-              onRunCommand(searchResult.command.id)
-              onClose()
-            }}
-          >
-            <span>{searchResult.command.title}</span>
-            <span>{searchResult.command.description}</span>
-          </a>
-        ))}
+        {matchingScripts.length > 0 && (
+            <div className="mt-2 rounded-xl border-2 border-theme-600 bg-theme-50 py-1">
+              <div className="max-h-64 snap-y overflow-y-auto">
+                {matchingScripts.map((searchResult, index) => {
+                  const isLast = index === matchingScripts.length - 1
+                  return (
+                    <a
+                        className={cn(
+                            "block cursor-pointer text-theme-950 hover:bg-theme-200 snap-start",
+                            !isLast && "border-b-[1px] border-theme-600",
+                        )}
+                        onClick={() => {
+                          void onRunCommand(searchResult.command.id)
+                          onClose()
+                        }}
+                    >
+                      <div className="flex flex-col px-3 py-1">
+                        <span className="text-lg font-bold">{searchResult.command.title}</span>
+                        <span className="truncate text-lg italic">{searchResult.command.description} with long text behind</span>
+                      </div>
+                    </a>
+                )})}
+              </div>
+            </div>
+        )}
       </div>
     </div>
   )

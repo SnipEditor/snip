@@ -57,18 +57,18 @@ export default function useScriptCommandRunner(
     currentScriptState.running = true
     delete currentScriptState.error
     setScriptState({...currentScriptState})
-    invoke('run_script_command', { commandId, editorRequestChannel })
-        .then(() => {
-          currentScriptState.running = false
-          setScriptState({...currentScriptState})
-          console.log('Script ran successfully')
-        })
-        .catch((e) => {
-          console.warn(`Error running script: ${e}`)
-          currentScriptState.running = false
-          currentScriptState.error = e
-          setScriptState({...currentScriptState})
-        })
+    try {
+      await invoke('run_script_command', {commandId, editorRequestChannel})
+      currentScriptState.running = false
+      setScriptState({...currentScriptState})
+      console.log('Script ran successfully')
+    } catch (e) {
+      const error = e as string
+      console.warn(`Error running script: ${error}`)
+      currentScriptState.running = false
+      currentScriptState.error = error
+      setScriptState({...currentScriptState})
+    }
   }, [scriptState, setScriptState, editorRef])
 
   return {

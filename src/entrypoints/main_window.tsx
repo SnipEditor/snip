@@ -2,14 +2,14 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import CodeEditor from '../containers/CodeEditor.tsx'
 import SettingsProvider from '../components/SettingsProvider.tsx'
-import ThemeMetaSwitcher from '../components/ThemeMetaSwitcher.tsx'
+import GlobalThemeDataSwitcher from '../components/GlobalThemeDataSwitcher.tsx'
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <SettingsProvider>
-      <ThemeMetaSwitcher>
+      <GlobalThemeDataSwitcher>
         <CodeEditor />
-      </ThemeMetaSwitcher>
+      </GlobalThemeDataSwitcher>
     </SettingsProvider>
   </React.StrictMode>,
 )

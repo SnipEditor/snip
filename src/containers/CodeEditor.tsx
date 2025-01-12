@@ -88,12 +88,12 @@ function CodeEditor() {
         />
       </div>
       <div
-        className="grid grid-cols-3 p-2"
+        className="grid grid-cols-3"
         style={{
           backgroundColor: theme.background,
         }}
       >
-        <div className="m-0">
+        <div className="m-0 p-2">
           <select
             value={currentLanguage}
             onChange={(e) =>
@@ -107,14 +107,9 @@ function CodeEditor() {
             ))}
           </select>
         </div>
-        <div className="m-0 text-center">
             <CommandStatus running={commandIsRunning} error={commandRunError} pickerOpen={commandPickerIsOpen}/>
-        </div>
         <div
-          className="m-0 text-right"
-          style={{
-            color: theme.textColor,
-          }}
+          className="m-0 p-2 text-right text-theme-700"
         >
           {cursorPosLine}:{cursorPosCh + 1}
         </div>
