@@ -1,8 +1,10 @@
-import {PropsWithChildren, useEffect, useMemo} from 'react'
+import { PropsWithChildren, useEffect, useMemo } from 'react'
 import useTheme from '../modules/useTheme.tsx'
-import getShades from "../modules/getShades.ts";
+import getShades from '../modules/getShades.ts'
 
-export default function GlobalThemeDataSwitcher({ children }: PropsWithChildren) {
+export default function GlobalThemeDataSwitcher({
+  children,
+}: PropsWithChildren) {
   const theme = useTheme()
   useEffect(() => {
     document.documentElement.style.display = 'none'
@@ -21,17 +23,17 @@ export default function GlobalThemeDataSwitcher({ children }: PropsWithChildren)
     const colorMap = getShades(theme.background, theme.isDark)
     return `
       :root {
-        ${Object.entries(colorMap).map(([key, value]) => `--color-theme-${key}: ${value}`).join(';\n')}
+        ${Object.entries(colorMap)
+          .map(([key, value]) => `--color-theme-${key}: ${value}`)
+          .join(';\n')}
       }
     `
   }, [theme])
 
   return (
-      <>
-        <style type="text/css">
-          {css}
-        </style>
-        {children}
-      </>
+    <>
+      <style type="text/css">{css}</style>
+      {children}
+    </>
   )
 }

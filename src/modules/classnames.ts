@@ -1,7 +1,7 @@
 import { twMerge } from 'tailwind-merge'
 
-export type CN = string | null | boolean | undefined | CN[];
-function flattenClassNames(...classnames: CN[]) : string {
+export type CN = string | null | boolean | undefined | CN[]
+function flattenClassNames(...classnames: CN[]): string {
   return [...classnames].flat(10).filter(Boolean).join(' ')
 }
 

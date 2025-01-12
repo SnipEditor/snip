@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Error, ErrorKind};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use sublime_fuzzy::best_match;
 use tokio::fs::metadata;
 use tokio::io::AsyncReadExt;
@@ -99,7 +99,7 @@ impl ScriptManager {
         }
     }
 
-    async fn load_scripts(&mut self, location: &PathBuf) -> Result<(), Error> {
+    async fn load_scripts(&mut self, location: &Path) -> Result<(), Error> {
         let main_dir = location.read_dir()?;
         for entry in main_dir {
             let entry = entry?;

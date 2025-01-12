@@ -2,10 +2,7 @@ use crate::scripts::loader::js_runtime::{transpile_extension, SnipModuleLoader};
 use crate::scripts::loader::scripts::{Command, ScriptManager};
 use crate::window::{WindowTask, Windows};
 use deno_core::error::AnyError;
-use deno_core::{
-    extension, op2, v8, JsRuntime, OpState, Resource, ResourceId,
-    RuntimeOptions,
-};
+use deno_core::{extension, op2, v8, JsRuntime, OpState, Resource, ResourceId, RuntimeOptions};
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -125,7 +122,8 @@ pub async fn run_script_command(
     let command = {
         let script_manager = &script_manager.lock().await;
         script_manager
-            .find_command_by_id(command_id.as_str()).cloned()
+            .find_command_by_id(command_id.as_str())
+            .cloned()
     };
 
     if command.is_none() {
@@ -147,10 +145,9 @@ pub async fn run_script_command(
         let request = receiver.recv().await;
         if let Some(request) = request {
             let event = match request {
-                InternalScriptRunEditorRequest::Request(event) => ScriptRunEditorRequest{
-                    id: None,
-                    event
-                },
+                InternalScriptRunEditorRequest::Request(event) => {
+                    ScriptRunEditorRequest { id: None, event }
+                }
                 InternalScriptRunEditorRequest::RequestWithResponse {
                     event,
                     reply_sender,
@@ -162,9 +159,9 @@ pub async fn run_script_command(
                     let id = script_state.last_given_id;
                     script_state.last_given_id = id + 1;
                     script_state.reply_senders.insert(id, reply_sender);
-                    ScriptRunEditorRequest{
+                    ScriptRunEditorRequest {
                         id: Some(id),
-                        event
+                        event,
                     }
                 }
                 InternalScriptRunEditorRequest::Error(e) => {

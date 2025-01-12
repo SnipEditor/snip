@@ -1,10 +1,10 @@
 import { MouseEventHandler, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
-import cn from "../modules/classnames.ts";
+import cn from '../modules/classnames.ts'
 
 export interface SearchOverlayProps {
   onClose: () => void
-  onRunCommand: (scriptId: string) => (void | Promise<void>)
+  onRunCommand: (scriptId: string) => void | Promise<void>
 }
 
 interface Command {
@@ -36,10 +36,7 @@ export default function SearchOverlay({
       className="absolute flex size-full justify-center"
       onClick={() => onClose()}
     >
-      <div
-        className="mt-32 h-fit w-96"
-        onClick={stopPropagationClickHandler}
-      >
+      <div className="mt-32 h-fit w-96" onClick={stopPropagationClickHandler}>
         <input
           type="text"
           placeholder="Start typing..."
@@ -77,29 +74,34 @@ export default function SearchOverlay({
           autoFocus
         />
         {matchingScripts.length > 0 && (
-            <div className="mt-2 rounded-xl border-2 border-theme-600 bg-theme-50 py-1">
-              <div className="max-h-64 snap-y overflow-y-auto">
-                {matchingScripts.map((searchResult, index) => {
-                  const isLast = index === matchingScripts.length - 1
-                  return (
-                    <a
-                        className={cn(
-                            "block cursor-pointer text-theme-950 hover:bg-theme-200 snap-start",
-                            !isLast && "border-b-[1px] border-theme-600",
-                        )}
-                        onClick={() => {
-                          void onRunCommand(searchResult.command.id)
-                          onClose()
-                        }}
-                    >
-                      <div className="flex flex-col px-3 py-1">
-                        <span className="text-lg font-bold">{searchResult.command.title}</span>
-                        <span className="truncate text-lg italic">{searchResult.command.description} with long text behind</span>
-                      </div>
-                    </a>
-                )})}
-              </div>
+          <div className="mt-2 rounded-xl border-2 border-theme-600 bg-theme-50 py-1">
+            <div className="max-h-64 snap-y overflow-y-auto">
+              {matchingScripts.map((searchResult, index) => {
+                const isLast = index === matchingScripts.length - 1
+                return (
+                  <a
+                    className={cn(
+                      'block cursor-pointer text-theme-950 hover:bg-theme-200 snap-start',
+                      !isLast && 'border-b-[1px] border-theme-600',
+                    )}
+                    onClick={() => {
+                      void onRunCommand(searchResult.command.id)
+                      onClose()
+                    }}
+                  >
+                    <div className="flex flex-col px-3 py-1">
+                      <span className="text-lg font-bold">
+                        {searchResult.command.title}
+                      </span>
+                      <span className="truncate text-lg italic">
+                        {searchResult.command.description} with long text behind
+                      </span>
+                    </div>
+                  </a>
+                )
+              })}
             </div>
+          </div>
         )}
       </div>
     </div>

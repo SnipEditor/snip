@@ -17,7 +17,7 @@ import { useSettings } from '../context/settings.ts'
 import useScriptCommandSelector from '../modules/useScriptCommandSelector.ts'
 import SearchOverlay from '../components/SearchOverlay.tsx'
 import useScriptCommandRunner from '../modules/useScriptCommandRunner.ts'
-import CommandStatus from "../components/CommandStatus.tsx";
+import CommandStatus from '../components/CommandStatus.tsx'
 
 function CodeEditor() {
   const settings = useSettings()
@@ -45,20 +45,18 @@ function CodeEditor() {
     [],
   )
 
-    const { isOpen: commandPickerIsOpen, close: closeScriptSelector } =
-        useScriptCommandSelector()
+  const { isOpen: commandPickerIsOpen, close: closeScriptSelector } =
+    useScriptCommandSelector()
 
-    const [editorRef, setEditorRef] = useState<ReactCodeMirrorRef | null>(null)
-    const {
-        isRunning: commandIsRunning,
-        error: commandRunError,
-        triggerCommand
-    } = useScriptCommandRunner(editorRef)
+  const [editorRef, setEditorRef] = useState<ReactCodeMirrorRef | null>(null)
+  const {
+    isRunning: commandIsRunning,
+    error: commandRunError,
+    triggerCommand,
+  } = useScriptCommandRunner(editorRef)
 
   const extensions = useMemo(() => {
-    const extensions: Extension[] = [
-        EditorView.editable.of(!commandIsRunning),
-    ]
+    const extensions: Extension[] = [EditorView.editable.of(!commandIsRunning)]
     if (settings.wrap_lines) {
       extensions.push(EditorView.lineWrapping)
     }
@@ -107,10 +105,12 @@ function CodeEditor() {
             ))}
           </select>
         </div>
-            <CommandStatus running={commandIsRunning} error={commandRunError} pickerOpen={commandPickerIsOpen}/>
-        <div
-          className="m-0 p-2 text-right text-theme-700"
-        >
+        <CommandStatus
+          running={commandIsRunning}
+          error={commandRunError}
+          pickerOpen={commandPickerIsOpen}
+        />
+        <div className="m-0 p-2 text-right text-theme-700">
           {cursorPosLine}:{cursorPosCh + 1}
         </div>
       </div>
