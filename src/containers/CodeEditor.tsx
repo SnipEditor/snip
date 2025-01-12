@@ -2,6 +2,7 @@ import CodeMirror, {
   BasicSetupOptions,
   EditorView,
   Extension,
+  ReactCodeMirrorRef,
   ViewUpdate,
 } from '@uiw/react-codemirror'
 import { langs } from '@uiw/codemirror-extensions-langs'
@@ -13,6 +14,10 @@ import {
   useSortedLanguages,
 } from '../modules/languageKey.ts'
 import { useSettings } from '../context/settings.ts'
+import useScriptCommandSelector from '../modules/useScriptCommandSelector.ts'
+import SearchOverlay from '../components/SearchOverlay.tsx'
+import useScriptCommandRunner from '../modules/useScriptCommandRunner.ts'
+import CommandStatus from '../components/CommandStatus.tsx'
 
 function CodeEditor() {
   const settings = useSettings()
@@ -40,8 +45,18 @@ function CodeEditor() {
     [],
   )
 
+  const { isOpen: commandPickerIsOpen, close: closeScriptSelector } =
+    useScriptCommandSelector()
+
+  const [editorRef, setEditorRef] = useState<ReactCodeMirrorRef | null>(null)
+  const {
+    isRunning: commandIsRunning,
+    error: commandRunError,
+    triggerCommand,
+  } = useScriptCommandRunner(editorRef)
+
   const extensions = useMemo(() => {
-    const extensions: Extension[] = []
+    const extensions: Extension[] = [EditorView.editable.of(!commandIsRunning)]
     if (settings.wrap_lines) {
       extensions.push(EditorView.lineWrapping)
     }
@@ -49,7 +64,7 @@ function CodeEditor() {
       extensions.push(langs[languages[currentLanguage].highlightKey]())
     }
     return extensions
-  }, [settings.wrap_lines, currentLanguage])
+  }, [settings.wrap_lines, currentLanguage, commandIsRunning])
 
   const theme = useTheme()
 
@@ -66,15 +81,17 @@ function CodeEditor() {
           theme={theme.extension}
           basicSetup={basicSetup}
           autoFocus
+          ref={setEditorRef}
+          readOnly={commandIsRunning}
         />
       </div>
       <div
-        className="flex justify-between"
+        className="grid grid-cols-3"
         style={{
           backgroundColor: theme.background,
         }}
       >
-        <div className="m-2">
+        <div className="m-0 p-2">
           <select
             value={currentLanguage}
             onChange={(e) =>
@@ -88,15 +105,21 @@ function CodeEditor() {
             ))}
           </select>
         </div>
-        <div
-          className="m-2"
-          style={{
-            color: theme.textColor,
-          }}
-        >
+        <CommandStatus
+          running={commandIsRunning}
+          error={commandRunError}
+          pickerOpen={commandPickerIsOpen}
+        />
+        <div className="m-0 p-2 text-right text-theme-700">
           {cursorPosLine}:{cursorPosCh + 1}
         </div>
       </div>
+      {commandPickerIsOpen && (
+        <SearchOverlay
+          onClose={closeScriptSelector}
+          onRunCommand={triggerCommand}
+        />
+      )}
     </div>
   )
 }

@@ -1,0 +1,8 @@
+{
+  "name": "format_json",
+  "title": "Format JSON",
+  "description": "Cleans and formats JSON documents",
+  "version": 1,
+  "api": 1,
+  "entryPoint": "./index.ts"
+}

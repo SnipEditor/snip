@@ -1,0 +1,8 @@
+{
+  "name": "minify_json",
+  "title": "Minify JSON",
+  "description": "Cleans and minifies JSON documents",
+  "version": 1,
+  "api": 1,
+  "entryPoint": "./index.ts"
+}
