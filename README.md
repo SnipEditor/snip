@@ -53,28 +53,28 @@ To start Snip, simply run the binary
 
 1. Clone the repository:
 
-    ```bash
-    git clone https://github.com/SnipEditor/snip.git
-    cd snip
-    ```
+   ```bash
+   git clone https://github.com/SnipEditor/snip.git
+   cd snip
+   ```
 
 2. Install dependencies:
 
-    ```bash
-    yarn install
-    ```
+   ```bash
+   yarn install
+   ```
 
 3. Run the application in development mode:
 
-    ```bash
-    yarn tauri dev
-    ```
+   ```bash
+   yarn tauri dev
+   ```
 
 4. (To build a standalone executable):
 
-    ```bash
-    yarn tauri build
-    ```
+   ```bash
+   yarn tauri build
+   ```
 
 ## License
 
