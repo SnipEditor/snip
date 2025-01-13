@@ -186,7 +186,7 @@ pub async fn reply_editor_request(
 ) -> Result<(), String> {
     let state = &mut state.lock().await;
     let script_state = state
-        .get_script_state(&webview_window.label().to_string())
+        .get_script_state(webview_window.label())
         .expect("Window should have script state");
 
     let reply_sender = script_state.reply_senders.remove(&reply.id);

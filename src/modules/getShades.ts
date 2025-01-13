@@ -118,17 +118,7 @@ function convertHexToHsl(hex: string) {
 
 function convertHslToHex(hue: number, saturation: number, luminosity: number) {
   const { r, g, b } = convertHslToRgb(hue, saturation, luminosity)
-  const result = convertRgbToHex(r, g, b)
-  console.log({
-    hue,
-    saturation,
-    luminosity,
-    r,
-    g,
-    b,
-    result,
-  })
-  return result
+  return convertRgbToHex(r, g, b)
 }
 
 export default function getShades(
@@ -136,7 +126,6 @@ export default function getShades(
   darkMode: boolean = false,
 ) {
   const baseHSL = convertHexToHsl(baseColorHex)
-  console.log(baseHSL)
   const {
     hue: baseHue,
     saturation: baseSaturation,
