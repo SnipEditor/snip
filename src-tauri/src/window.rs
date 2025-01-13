@@ -9,6 +9,7 @@ use tokio::sync::mpsc::{channel, Receiver, Sender};
 
 pub enum WindowTask {
     Script(ScriptTask),
+    Close,
 }
 
 pub struct WindowState {
@@ -19,6 +20,7 @@ pub struct WindowState {
 
 pub struct Windows {
     window_states: HashMap<String, WindowState>,
+    last_window_id: u32,
 }
 
 fn window_task_listener(mut task_receiver: Receiver<WindowTask>) {
@@ -32,6 +34,7 @@ fn window_task_listener(mut task_receiver: Receiver<WindowTask>) {
             if let Some(task) = task {
                 match task {
                     WindowTask::Script(script_event) => handle_script_task(script_event).await,
+                    WindowTask::Close => break,
                 }
             } else {
                 break;
@@ -44,11 +47,13 @@ impl Windows {
     pub fn new() -> Self {
         Self {
             window_states: HashMap::new(),
+            last_window_id: 0,
         }
     }
 
     pub fn create_window(&mut self, app_handle: &AppHandle) -> Result<(), Error> {
-        let id = String::from("main");
+        self.last_window_id += 1;
+        let id = format!("main_{}", self.last_window_id);
 
         let (task_sender, task_receiver) = channel(8);
 
@@ -71,7 +76,7 @@ impl Windows {
             WebviewUrl::App("windows/index.html".parse().unwrap()),
         )
         .min_inner_size(800.0, 600.0)
-        .title("Snip")
+        .title(format!("Snip - Untitled {}", self.last_window_id))
         .build()?;
 
         Ok(())
@@ -91,12 +96,26 @@ impl Windows {
         }
     }
 
-    pub fn get_script_state(&mut self, window_id: &String) -> Option<&mut WindowScriptState> {
+    pub fn get_script_state(&mut self, window_id: &str) -> Option<&mut WindowScriptState> {
         let window_state = self.window_states.get_mut(window_id);
         if let Some(window_state) = window_state {
             Some(&mut window_state.script_state)
         } else {
             None
         }
+    }
+
+    pub fn destroy_window(&mut self, window_id: &str) {
+        if let Some(window_state) = self.window_states.remove(window_id) {
+            window_state
+                .task_sender
+                .blocking_send(WindowTask::Close)
+                .unwrap();
+            window_state.thread_join_handle.join().unwrap();
+        }
+    }
+
+    pub fn has_open(&self) -> bool {
+        !self.window_states.is_empty()
     }
 }
