@@ -4,6 +4,7 @@ use tauri::async_runtime::Mutex;
 use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 use tauri::Error::WebviewLabelAlreadyExists;
 use tauri_plugin_store::StoreExt;
+use crate::window::menu;
 
 #[derive(Serialize, Deserialize, Clone)]
 enum Theme {
@@ -99,7 +100,8 @@ pub fn open_settings_window(app: &AppHandle) {
         "settings".to_string(),
         WebviewUrl::App("windows/settings.html".parse().unwrap()),
     )
-        .min_inner_size(200.0, 400.0)
+        .inner_size(400.0, 250.0)
+        .resizable(false)
         .title("Snip Settings")
         .build();
     if let Err(WebviewLabelAlreadyExists(_)) = settings_window_result {
@@ -108,5 +110,8 @@ pub fn open_settings_window(app: &AppHandle) {
         settings_window.unminimize().unwrap(); // Must use it if window is minimized
         settings_window.set_focus().unwrap();
         settings_window.show().unwrap();
+    } else {
+        let window = settings_window_result.unwrap();
+        menu::on_new_window(&window);
     }
 }
