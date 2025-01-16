@@ -5,7 +5,7 @@ mod window;
 use crate::scripts::commands::{get_script_commands, reply_editor_request, run_script_command};
 use crate::scripts::loader::scripts::ScriptManager;
 use crate::settings::{get_settings, set_preferred_language, set_theme, set_wrap_lines, Settings};
-use crate::window::Windows;
+use crate::window::{menu, Windows};
 use tauri::async_runtime::{spawn, Mutex};
 use tauri::menu::{AboutMetadataBuilder, Menu, MenuItemBuilder, Submenu, SubmenuBuilder};
 use tauri::path::BaseDirectory;
@@ -150,42 +150,7 @@ pub fn run() {
             app.manage(Mutex::new(windows));
             app.manage(Mutex::new(script_manager));
 
-            app.on_menu_event(move |app, event| {
-                match event.id().0.as_str() {
-                    MENU_ITEM_ID_SETTINGS => {
-                        let settings_window_result = WebviewWindowBuilder::new(
-                            app,
-                            "settings".to_string(),
-                            WebviewUrl::App("windows/settings.html".parse().unwrap()),
-                        )
-                        .min_inner_size(200.0, 400.0)
-                        .title("Snip Settings")
-                        .build();
-                        if let Err(WebviewLabelAlreadyExists(_)) = settings_window_result {
-                            let webview_windows = app.webview_windows();
-                            let settings_window = webview_windows.get("settings").unwrap();
-                            settings_window.unminimize().unwrap(); // Must use it if window is minimized
-                            settings_window.set_focus().unwrap();
-                            settings_window.show().unwrap();
-                        }
-                    }
-                    MENU_ITEM_ID_SCRIPTS_OPEN_PICKER => {
-                        let focused_window = app.get_focused_window();
-                        if let Some(focused_window) = focused_window {
-                            if focused_window.label() != "settings" {
-                                app.emit_to(focused_window.label(), "open_picker", true)
-                                    .unwrap()
-                            }
-                        }
-                    }
-                    MENU_ITEM_ID_NEW_WINDOW => {
-                        let windows: State<'_, Mutex<Windows>> = app.state();
-                        let mut windows = windows.blocking_lock();
-                        windows.create_window(app).unwrap();
-                    }
-                    _ => {}
-                }
-            });
+            menu::initialize_global_handlers(app.handle());
 
             setup_menu(app.handle(), false)?;
 

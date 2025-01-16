@@ -1,3 +1,5 @@
+pub mod menu;
+
 use crate::scripts::commands::{handle_script_task, ScriptTask, WindowScriptState};
 use std::collections::HashMap;
 use std::thread;
