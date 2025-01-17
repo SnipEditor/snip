@@ -50,7 +50,7 @@ jobs:
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.args }}
+          targets: ${{ matrix.targets }}
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
@@ -61,6 +61,7 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Import Apple Developer Certificate
+        if: matrix.platform == 'macos-latest'
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
