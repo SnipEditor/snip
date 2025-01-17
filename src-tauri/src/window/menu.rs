@@ -1,11 +1,12 @@
+use tauri::menu::{
+    AboutMetadataBuilder, Menu, MenuEvent, MenuItemBuilder, Submenu, SubmenuBuilder,
+};
 use tauri::{AppHandle, Emitter, Manager, WebviewWindow, Window, Wry};
-use tauri::menu::{AboutMetadataBuilder, Menu, MenuEvent, MenuItemBuilder, Submenu, SubmenuBuilder};
 
 const MENU_ITEM_ID_SETTINGS: &str = "settings";
 const MENU_ITEM_ID_NEW_WINDOW: &str = "window_new";
 const MENU_ITEM_ID_SCRIPTS_OPEN_PICKER: &str = "scripts_open_picker";
 const MENU_ITEM_ID_SCRIPTS_REEXECUTE_LAST: &str = "scripts_reexecute_last";
-
 
 fn get_file_sub_menu(app: &AppHandle, in_settings: bool) -> Result<Submenu<Wry>, tauri::Error> {
     let mut builder = SubmenuBuilder::new(app, "File");
@@ -41,7 +42,8 @@ fn build_menu(app: &AppHandle, in_settings: bool) -> Result<Menu<tauri::Wry>, ta
 
     #[cfg(target_os = "macos")]
     {
-        app_sub_menu_builder = app_sub_menu_builder.services()
+        app_sub_menu_builder = app_sub_menu_builder
+            .services()
             .separator()
             .hide()
             .hide_others()
@@ -49,8 +51,7 @@ fn build_menu(app: &AppHandle, in_settings: bool) -> Result<Menu<tauri::Wry>, ta
             .separator();
     }
 
-    let app_sub_menu = app_sub_menu_builder.quit()
-        .build()?;
+    let app_sub_menu = app_sub_menu_builder.quit().build()?;
 
     let file_sub_menu = get_file_sub_menu(app, in_settings)?;
     let app_menu = Menu::new(app)?;
@@ -99,12 +100,10 @@ fn handle_menu_event(app: &AppHandle, window: &Window, event: MenuEvent) {
             app.emit("open_settings", true).unwrap();
         }
         MENU_ITEM_ID_SCRIPTS_OPEN_PICKER => {
-            app.emit_to(window.label(), "open_picker", true)
-                .unwrap()
+            app.emit_to(window.label(), "open_picker", true).unwrap()
         }
         MENU_ITEM_ID_NEW_WINDOW => {
             app.emit("new_window", true).unwrap();
-
         }
         _ => {}
     }
@@ -150,7 +149,8 @@ pub fn on_window_focus_change(window: &Window) {
         let menu = build_menu(window.app_handle(), window.label() == "settings")?;
         menu.set_as_app_menu()?;
         Ok(())
-    })().expect("Could not replace menu");
+    })()
+    .expect("Could not replace menu");
 }
 
 #[cfg(not(target_os = "macos"))]

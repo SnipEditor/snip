@@ -38,6 +38,7 @@ Download the .msi for your cpu architecture from the [releases page](https://git
 
 Download the .deb for your cpu architecture from the [releases page](https://github.com/SnipEditor/snip/releases).
 Run the following command with `<file>` replaced with the path to the downloaded .deb file:
+
 ```bash
 sudo dpkg -i <file>
 ```
@@ -46,6 +47,7 @@ sudo dpkg -i <file>
 
 Download the .rpm for your cpu architecture from the [releases page](https://github.com/SnipEditor/snip/releases).
 Run the following command with `<file>` replaced with the path to the downloaded .rpm file:
+
 ```bash
 sudo rpm -i <file>
 ```

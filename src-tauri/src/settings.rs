@@ -1,10 +1,10 @@
+use crate::window::menu;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
 use tauri::async_runtime::Mutex;
-use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 use tauri::Error::WebviewLabelAlreadyExists;
+use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_store::StoreExt;
-use crate::window::menu;
 
 #[derive(Serialize, Deserialize, Clone)]
 enum Theme {
@@ -100,10 +100,10 @@ pub fn open_settings_window(app: &AppHandle) {
         "settings".to_string(),
         WebviewUrl::App("windows/settings.html".parse().unwrap()),
     )
-        .inner_size(400.0, 250.0)
-        .resizable(false)
-        .title("Snip Settings")
-        .build();
+    .inner_size(400.0, 250.0)
+    .resizable(false)
+    .title("Snip Settings")
+    .build();
     if let Err(WebviewLabelAlreadyExists(_)) = settings_window_result {
         let webview_windows = app.webview_windows();
         let settings_window = webview_windows.get("settings").unwrap();

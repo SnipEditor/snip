@@ -4,7 +4,9 @@ mod window;
 
 use crate::scripts::commands::{get_script_commands, reply_editor_request, run_script_command};
 use crate::scripts::loader::scripts::ScriptManager;
-use crate::settings::{get_settings, open_settings_window, set_preferred_language, set_theme, set_wrap_lines, Settings};
+use crate::settings::{
+    get_settings, open_settings_window, set_preferred_language, set_theme, set_wrap_lines, Settings,
+};
 use crate::window::{menu, Windows};
 use tauri::async_runtime::{spawn, Mutex};
 use tauri::path::BaseDirectory;

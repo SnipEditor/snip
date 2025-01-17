@@ -12,7 +12,7 @@ if (platform() === 'windows') {
     if (!e.ctrlKey) {
       return
     }
-    switch(e.key) {
+    switch (e.key) {
       case 'n':
         void emit('new_window', true)
         break
