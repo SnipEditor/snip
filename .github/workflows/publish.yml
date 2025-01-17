@@ -18,9 +18,6 @@ jobs:
           - platform: 'macos-latest' # for universal binary.
             args: '--target universal-apple-darwin'
             targets: 'aarch64-apple-darwin,x86_64-apple-darwin'
-          - platform: 'windows-latest' # x86.
-            args: '--target i686-pc-windows-msvc --bundles msi'
-            targets: 'i686-pc-windows-msvc'
           - platform: 'windows-latest' # x64.
             args: '--target x86_64-pc-windows-msvc --bundles msi'
             targets: 'x86_64-pc-windows-msvc'
