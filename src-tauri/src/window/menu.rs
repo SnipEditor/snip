@@ -110,7 +110,7 @@ fn handle_menu_event(app: &AppHandle, window: &Window, event: MenuEvent) {
     }
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(not(target_os = "windows"))]
 pub fn initialize_global_handlers(app: &AppHandle) {
     app.on_menu_event(move |app, event| {
         let focused_window = app.get_focused_window();
@@ -122,7 +122,7 @@ pub fn initialize_global_handlers(app: &AppHandle) {
     });
 }
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(target_os = "windows")]
 pub fn initialize_global_handlers(_app: &AppHandle) {}
 
 #[cfg(not(target_os = "macos"))]
@@ -130,9 +130,12 @@ pub fn on_new_window(window: &WebviewWindow) {
     if window.label() == "settings" {
         return;
     }
-    window.on_menu_event(|window, event| {
-        handle_menu_event(window.app_handle(), window, event);
-    });
+    #[cfg(target_os = "windows")]
+    {
+        window.on_menu_event(|window, event| {
+            handle_menu_event(window.app_handle(), window, event);
+        });
+    }
 
     let menu = build_menu(window.app_handle(), false).unwrap();
     window.set_menu(menu).unwrap();
