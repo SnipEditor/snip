@@ -25,7 +25,9 @@ fn build_menu(app: &AppHandle, in_settings: bool) -> Result<Menu<tauri::Wry>, ta
         .accelerator("CmdOrCtrl+,")
         .enabled(!in_settings)
         .build(app)?;
-    let app_sub_menu_builder = SubmenuBuilder::new(app, "Snip")
+
+    #[allow(unused_mut)] // mut is needed on macOS
+    let mut app_sub_menu_builder = SubmenuBuilder::new(app, "Snip")
         .about(Some(
             AboutMetadataBuilder::new()
                 .name(Some("Snip"))
@@ -141,7 +143,7 @@ pub fn on_new_window(_window: &WebviewWindow) {}
 
 #[cfg(target_os = "macos")]
 pub fn on_window_focus_change(window: &Window) {
-    (||{
+    (|| -> Result<(), tauri::Error> {
         let menu = build_menu(window.app_handle(), window.label() == "settings")?;
         menu.set_as_app_menu()?;
         Ok(())
