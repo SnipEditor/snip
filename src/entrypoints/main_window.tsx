@@ -3,10 +3,11 @@ import ReactDOM from 'react-dom/client'
 import CodeEditor from '../containers/CodeEditor.tsx'
 import SettingsProvider from '../components/SettingsProvider.tsx'
 import GlobalThemeDataSwitcher from '../components/GlobalThemeDataSwitcher.tsx'
-import { emit } from '@tauri-apps/api/event'
+import { emit, emitTo } from '@tauri-apps/api/event'
 import { platform } from '@tauri-apps/plugin-os'
+import { getCurrentWindow } from '@tauri-apps/api/window'
 
-if(platform() === 'windows') {
+if (platform() === 'windows') {
   document.addEventListener('keydown', (e) => {
     if (!e.ctrlKey) {
       return
@@ -19,7 +20,7 @@ if(platform() === 'windows') {
         void emit('open_settings', true)
         break
       case 'b':
-        void emit('open_picker', true)
+        void emitTo(getCurrentWindow().label, 'open_picker', true)
         break
     }
   })
