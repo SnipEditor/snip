@@ -1,3 +1,5 @@
+pub mod menu;
+
 use crate::scripts::commands::{handle_script_task, ScriptTask, WindowScriptState};
 use std::collections::HashMap;
 use std::thread;
@@ -70,7 +72,7 @@ impl Windows {
             },
         );
 
-        WebviewWindowBuilder::new(
+        let window = WebviewWindowBuilder::new(
             app_handle,
             id,
             WebviewUrl::App("windows/index.html".parse().unwrap()),
@@ -78,6 +80,8 @@ impl Windows {
         .min_inner_size(800.0, 600.0)
         .title(format!("Snip - Untitled {}", self.last_window_id))
         .build()?;
+
+        menu::on_new_window(&window);
 
         Ok(())
     }

@@ -4,10 +4,10 @@ Snip is a simple, cross-platform text editor inspired by Boop. It aims to improv
 
 ## Features
 
-- **Cross-Platform Support**: Available on macOS, Windows[^1], and Linux[^1].
+- **Cross-Platform Support**: Available on macOS, Windows, and Linux.
 - **Handling of Large Files**: Efficiently handles large files without performance degradation.
 - **Syntax Highlighting**: Syntax highlighting for various programming languages.
-- **File Operations[^1]**: Ability to open, edit, and save files.
+- **File Operations**[^1]: Ability to open, edit, and save files.
 - **Easy Scripting**: Simple and powerful scripting capabilities.
 - **Quick Startup**: Fast startup time, making it ideal for quick edits.
 - **Notepad Functionality**: Useful as a small notepad for copying and editing snippets.
@@ -30,15 +30,31 @@ Download the .dmg from the [releases page](https://github.com/SnipEditor/snip/re
 
 ### Windows
 
-TODO: Currently windows support is not yet implemented. Support will arrive in the near future
+Download the .msi for your cpu architecture from the [releases page](https://github.com/SnipEditor/snip/releases). Open it and follow the installation instructions.
 
 ### Linux
 
-TODO: Currently linux support is not yet implemented. Support will arrive in the near future
+#### Debian-based operating systems
+
+Download the .deb for your cpu architecture from the [releases page](https://github.com/SnipEditor/snip/releases).
+Run the following command with `<file>` replaced with the path to the downloaded .deb file:
+
+```bash
+sudo dpkg -i <file>
+```
+
+#### Red Hat based operating systems
+
+Download the .rpm for your cpu architecture from the [releases page](https://github.com/SnipEditor/snip/releases).
+Run the following command with `<file>` replaced with the path to the downloaded .rpm file:
+
+```bash
+sudo rpm -i <file>
+```
 
 ## Usage
 
-To start Snip, simply run the binary
+To start Snip, simply run it from your application list
 
 ## Building from Source
 

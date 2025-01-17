@@ -1,7 +1,9 @@
+use crate::window::menu;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
 use tauri::async_runtime::Mutex;
-use tauri::{AppHandle, Emitter};
+use tauri::Error::WebviewLabelAlreadyExists;
+use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_store::StoreExt;
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -90,4 +92,26 @@ pub async fn set_wrap_lines(
     let mut state = state.lock().await;
     state.wrap_lines = wrap_lines;
     save_settings(app, state.deref())
+}
+
+pub fn open_settings_window(app: &AppHandle) {
+    let settings_window_result = WebviewWindowBuilder::new(
+        app,
+        "settings".to_string(),
+        WebviewUrl::App("windows/settings.html".parse().unwrap()),
+    )
+    .inner_size(400.0, 250.0)
+    .resizable(false)
+    .title("Snip Settings")
+    .build();
+    if let Err(WebviewLabelAlreadyExists(_)) = settings_window_result {
+        let webview_windows = app.webview_windows();
+        let settings_window = webview_windows.get("settings").unwrap();
+        settings_window.unminimize().unwrap(); // Must use it if window is minimized
+        settings_window.set_focus().unwrap();
+        settings_window.show().unwrap();
+    } else {
+        let window = settings_window_result.unwrap();
+        menu::on_new_window(&window);
+    }
 }
