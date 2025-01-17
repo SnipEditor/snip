@@ -125,13 +125,28 @@ pub fn initialize_global_handlers(_app: &AppHandle) {}
 
 #[cfg(not(target_os = "macos"))]
 pub fn on_new_window(window: &WebviewWindow) {
+    if window.label() == "settings" {
+        return;
+    }
     window.on_menu_event(|window, event| {
         handle_menu_event(window.app_handle(), window, event);
     });
 
-    let menu = build_menu(window.app_handle(), window.label() == "settings").unwrap();
+    let menu = build_menu(window.app_handle(), false).unwrap();
     window.set_menu(menu).unwrap();
 }
 
 #[cfg(target_os = "macos")]
 pub fn on_new_window(_window: &WebviewWindow) {}
+
+#[cfg(target_os = "macos")]
+pub fn on_window_focus_change(window: &Window) {
+    (||{
+        let menu = build_menu(window.app_handle(), window.label() == "settings")?;
+        menu.set_as_app_menu()?;
+        Ok(())
+    })().expect("Could not replace menu");
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn on_window_focus_change(_window: &Window) {}

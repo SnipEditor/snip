@@ -62,11 +62,11 @@ pub fn run() {
             app.manage(Mutex::new(script_manager));
 
             let app_handle = app.handle().clone();
-            app.listen_any("open_settings", move |event| {
+            app.listen_any("open_settings", move |_| {
                 open_settings_window(&app_handle);
             });
             let app_handle = app.handle().clone();
-            app.listen_any("new_window", move |event| {
+            app.listen_any("new_window", move |_| {
                 let app_handle = app_handle.clone();
                 spawn(async move {
                     let windows: State<'_, Mutex<Windows>> = app_handle.state();
@@ -88,8 +88,7 @@ pub fn run() {
                 }
             }
             WindowEvent::Focused(true) => {
-                // setup_menu(window.app_handle(), window.label() == "settings")
-                //     .expect("Could not replace menu");
+                menu::on_window_focus_change(window);
             }
             _ => {}
         })
