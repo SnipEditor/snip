@@ -24,9 +24,6 @@ jobs:
           - platform: 'ubuntu-22.04'
             args: ''
             targets: ''
-          - platform: '	ubuntu-24.04-arm'
-            args: ''
-            targets: ''
 
     runs-on: ${{ matrix.platform }}
     steps:
