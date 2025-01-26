@@ -1,5 +1,7 @@
 use crate::scripts::loader::js_runtime::{transpile_extension, SnipModuleLoader};
-use crate::scripts::loader::scripts::{Command, EditorSelectionReplacement, EditorSelectionState, EditorState, ScriptManager};
+use crate::scripts::loader::scripts::{
+    Command, EditorSelectionReplacement, EditorSelectionState, EditorState, ScriptManager,
+};
 use crate::window::{WindowTask, Windows};
 use deno_core::error::AnyError;
 use deno_core::{extension, op2, v8, JsRuntime, OpState, Resource, ResourceId, RuntimeOptions};
@@ -7,7 +9,6 @@ use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
-use deno_core::_ops::serde_v8_to_rust;
 use tauri::ipc::Channel;
 use tauri::State;
 use tokio::sync::mpsc::channel;
@@ -147,7 +148,11 @@ pub async fn run_script_command(
         window_state
             .queue_task(
                 &window_label,
-                WindowTask::Script(ScriptTask::RunCommand(command.unwrap(), sender, editor_state)),
+                WindowTask::Script(ScriptTask::RunCommand(
+                    command.unwrap(),
+                    sender,
+                    editor_state,
+                )),
             )
             .await
             .map_err(|_| "Could not send run script task to executor".to_string())?;
@@ -204,7 +209,13 @@ pub async fn reply_editor_request(
     let reply_sender = script_state.reply_senders.remove(&reply.id);
     if let Some(sender) = reply_sender {
         sender
-            .send(reply.event.ok_or(reply.error.unwrap_or("Received an empty response".to_string())))
+            .send(
+                reply.event.ok_or(
+                    reply
+                        .error
+                        .unwrap_or("Received an empty response".to_string()),
+                ),
+            )
             .map_err(|_| "Could not send response".to_string())?;
         Ok(())
     } else {
@@ -213,7 +224,11 @@ pub async fn reply_editor_request(
 }
 
 pub enum ScriptTask {
-    RunCommand(Command, mpsc::Sender<InternalScriptRunEditorRequest>, EditorState),
+    RunCommand(
+        Command,
+        mpsc::Sender<InternalScriptRunEditorRequest>,
+        EditorState,
+    ),
 }
 
 struct EditorHandle {
@@ -256,7 +271,7 @@ async fn snip_op_get_full_text(
     let response = receiver
         .await
         .map_err(|err| AnyError::msg(err.to_string()))?
-        .map_err(|err| AnyError::msg(err))?;
+        .map_err(AnyError::msg)?;
     if let InternalScriptRunEditorResponse::GetFullText(fulltext) = response {
         Ok(fulltext)
     } else {
@@ -365,7 +380,7 @@ async fn snip_op_get_partial_text(
     let response = receiver
         .await
         .map_err(|err| AnyError::msg(err.to_string()))?
-        .map_err(|err| AnyError::msg(err))?;
+        .map_err(AnyError::msg)?;
     if let InternalScriptRunEditorResponse::GetPartialText(partial_text) = response {
         Ok(partial_text)
     } else {

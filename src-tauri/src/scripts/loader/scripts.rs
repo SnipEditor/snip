@@ -33,7 +33,7 @@ pub struct Command {
 pub struct EditorSelection {
     anchor: usize,
     head: usize,
-    text: Option<String>
+    text: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
