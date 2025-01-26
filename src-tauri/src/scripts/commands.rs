@@ -1,5 +1,7 @@
 use crate::scripts::loader::js_runtime::{transpile_extension, SnipModuleLoader};
-use crate::scripts::loader::scripts::{Command, ScriptManager};
+use crate::scripts::loader::scripts::{
+    Command, EditorSelectionReplacement, EditorSelectionState, EditorState, ScriptManager,
+};
 use crate::window::{WindowTask, Windows};
 use deno_core::error::AnyError;
 use deno_core::{extension, op2, v8, JsRuntime, OpState, Resource, ResourceId, RuntimeOptions};
@@ -68,6 +70,14 @@ pub enum ScriptRunEditorRequestEvent {
     SetFullText(String),
     #[serde(rename_all = "camelCase")]
     SetError(String),
+    #[serde(rename_all = "camelCase")]
+    GetPartialText {
+        start: Option<usize>,
+        end: Option<usize>,
+        selection_index: Option<usize>,
+    },
+    #[serde(rename_all = "camelCase")]
+    ReplaceSelections(Vec<EditorSelectionReplacement>),
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
@@ -80,8 +90,9 @@ pub struct ScriptRunEditorRequest {
 #[derive(Clone, Deserialize, Serialize, Debug)]
 pub struct ScriptRunEditorResponse {
     id: u64,
+    error: Option<String>,
     #[serde(flatten)]
-    event: InternalScriptRunEditorResponse,
+    event: Option<InternalScriptRunEditorResponse>,
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
@@ -89,6 +100,7 @@ pub struct ScriptRunEditorResponse {
 pub enum InternalScriptRunEditorResponse {
     #[serde(rename_all = "camelCase")]
     GetFullText(String),
+    GetPartialText(String),
 }
 
 #[derive(Debug)]
@@ -96,14 +108,14 @@ pub enum InternalScriptRunEditorRequest {
     Request(ScriptRunEditorRequestEvent),
     RequestWithResponse {
         event: ScriptRunEditorRequestEvent,
-        reply_sender: Sender<InternalScriptRunEditorResponse>,
+        reply_sender: Sender<Result<InternalScriptRunEditorResponse, String>>,
     },
     Error(String),
 }
 
 #[derive(Default)]
 pub struct WindowScriptState {
-    reply_senders: HashMap<u64, Sender<InternalScriptRunEditorResponse>>,
+    reply_senders: HashMap<u64, Sender<Result<InternalScriptRunEditorResponse, String>>>,
     last_given_id: u64,
 }
 
@@ -114,6 +126,7 @@ pub async fn run_script_command(
     webview_window: tauri::WebviewWindow,
     command_id: String,
     editor_request_channel: Channel<ScriptRunEditorRequest>,
+    editor_state: EditorState,
 ) -> Result<(), String> {
     let window_label = webview_window.label().to_string();
 
@@ -135,7 +148,11 @@ pub async fn run_script_command(
         window_state
             .queue_task(
                 &window_label,
-                WindowTask::Script(ScriptTask::RunCommand(command.unwrap(), sender)),
+                WindowTask::Script(ScriptTask::RunCommand(
+                    command.unwrap(),
+                    sender,
+                    editor_state,
+                )),
             )
             .await
             .map_err(|_| "Could not send run script task to executor".to_string())?;
@@ -192,7 +209,13 @@ pub async fn reply_editor_request(
     let reply_sender = script_state.reply_senders.remove(&reply.id);
     if let Some(sender) = reply_sender {
         sender
-            .send(reply.event)
+            .send(
+                reply.event.ok_or(
+                    reply
+                        .error
+                        .unwrap_or("Received an empty response".to_string()),
+                ),
+            )
             .map_err(|_| "Could not send response".to_string())?;
         Ok(())
     } else {
@@ -201,11 +224,16 @@ pub async fn reply_editor_request(
 }
 
 pub enum ScriptTask {
-    RunCommand(Command, mpsc::Sender<InternalScriptRunEditorRequest>),
+    RunCommand(
+        Command,
+        mpsc::Sender<InternalScriptRunEditorRequest>,
+        EditorState,
+    ),
 }
 
 struct EditorHandle {
     editor_request_channel: mpsc::Sender<InternalScriptRunEditorRequest>,
+    editor_state: EditorState,
 }
 
 impl Resource for EditorHandle {}
@@ -229,7 +257,7 @@ async fn snip_op_get_full_text(
         }
     }?;
 
-    let (sender, receiver) = oneshot::channel::<InternalScriptRunEditorResponse>();
+    let (sender, receiver) = oneshot::channel::<Result<InternalScriptRunEditorResponse, String>>();
     let request = request_channel
         .send(InternalScriptRunEditorRequest::RequestWithResponse {
             event: ScriptRunEditorRequestEvent::GetFullText,
@@ -242,7 +270,8 @@ async fn snip_op_get_full_text(
 
     let response = receiver
         .await
-        .map_err(|err| AnyError::msg(err.to_string()))?;
+        .map_err(|err| AnyError::msg(err.to_string()))?
+        .map_err(AnyError::msg)?;
     if let InternalScriptRunEditorResponse::GetFullText(fulltext) = response {
         Ok(fulltext)
     } else {
@@ -312,12 +341,110 @@ async fn snip_op_set_error(
     Ok(())
 }
 
+#[op2(async)]
+#[string]
+async fn snip_op_get_partial_text(
+    state: Rc<RefCell<OpState>>,
+    editor_handle: u32,
+    #[bigint] start: usize,
+    #[bigint] end: usize,
+) -> Result<String, AnyError> {
+    let request_channel = {
+        let editor_handle_result = state
+            .borrow()
+            .resource_table
+            .get::<EditorHandle>(editor_handle);
+        if let Ok(editor_handle) = &editor_handle_result {
+            let channel = editor_handle.editor_request_channel.clone();
+            Ok(channel)
+        } else {
+            Err(AnyError::msg("Invalid editor handle"))
+        }
+    }?;
+
+    let (sender, receiver) = oneshot::channel::<Result<InternalScriptRunEditorResponse, String>>();
+    let request = request_channel
+        .send(InternalScriptRunEditorRequest::RequestWithResponse {
+            event: ScriptRunEditorRequestEvent::GetPartialText {
+                start: Some(start),
+                end: Some(end),
+                selection_index: None,
+            },
+            reply_sender: sender,
+        })
+        .await;
+    if let Err(err) = request {
+        return Err(AnyError::msg(err.to_string()));
+    }
+
+    let response = receiver
+        .await
+        .map_err(|err| AnyError::msg(err.to_string()))?
+        .map_err(AnyError::msg)?;
+    if let InternalScriptRunEditorResponse::GetPartialText(partial_text) = response {
+        Ok(partial_text)
+    } else {
+        Err(AnyError::msg("Received incorrect response"))
+    }
+}
+
+#[op2(async)]
+#[serde]
+async fn snip_op_get_selection_state(
+    state: Rc<RefCell<OpState>>,
+    editor_handle: u32,
+) -> Result<EditorSelectionState, AnyError> {
+    let editor_handle_result = state
+        .borrow()
+        .resource_table
+        .get::<EditorHandle>(editor_handle);
+    if let Ok(editor_handle) = &editor_handle_result {
+        Ok(editor_handle.editor_state.selection.clone())
+    } else {
+        Err(AnyError::msg("Invalid editor handle"))
+    }
+}
+
+#[op2(async)]
+async fn snip_op_replace_selections(
+    state: Rc<RefCell<OpState>>,
+    editor_handle: u32,
+    #[serde] replacements: Vec<EditorSelectionReplacement>,
+) -> Result<(), AnyError> {
+    let request_channel = {
+        let editor_handle_result = state
+            .borrow()
+            .resource_table
+            .get::<EditorHandle>(editor_handle);
+        if let Ok(editor_handle) = &editor_handle_result {
+            let channel = editor_handle.editor_request_channel.clone();
+            Ok(channel)
+        } else {
+            Err(AnyError::msg("Invalid editor handle"))
+        }
+    }?;
+
+    let request = request_channel
+        .send(InternalScriptRunEditorRequest::Request(
+            ScriptRunEditorRequestEvent::ReplaceSelections(replacements),
+        ))
+        .await;
+    if let Err(err) = request {
+        return Err(AnyError::msg(err.to_string()));
+    }
+
+    Ok(())
+}
+
 extension!(
     snip,
     ops = [
         snip_op_get_full_text,
         snip_op_set_full_text,
         snip_op_set_error,
+        snip_op_get_partial_text,
+        snip_op_get_selection_state,
+        snip_op_replace_selections,
     ],
     esm_entry_point = "ext:snip/index.ts",
     esm = [dir "js_runtime/snip", "index.ts"]
@@ -368,6 +495,7 @@ async fn load_and_run_module(js_runtime: &mut JsRuntime, command: Command) -> Re
 pub async fn handle_script_run(
     command: Command,
     editor_request_channel: mpsc::Sender<InternalScriptRunEditorRequest>,
+    editor_state: EditorState,
 ) {
     let mut js_runtime = JsRuntime::new(RuntimeOptions {
         module_loader: Some(Rc::new(SnipModuleLoader)),
@@ -382,6 +510,7 @@ pub async fn handle_script_run(
             .resource_table
             .add(EditorHandle {
                 editor_request_channel: editor_request_channel.clone(),
+                editor_state,
             });
 
     let result = install_editor_handle_id(&mut js_runtime, editor_handle_resource_id);
@@ -403,9 +532,9 @@ pub async fn handle_script_run(
 
 pub async fn handle_script_task(event: ScriptTask) {
     match event {
-        ScriptTask::RunCommand(command, editor_request_channel) => {
+        ScriptTask::RunCommand(command, editor_request_channel, editor_state) => {
             println!("Running command {}", command.id);
-            handle_script_run(command, editor_request_channel).await
+            handle_script_run(command, editor_request_channel, editor_state).await
         }
     }
 }
