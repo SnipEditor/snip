@@ -28,6 +28,34 @@ pub struct Command {
     pub info: CommandInfo,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct EditorSelection {
+    anchor: usize,
+    head: usize,
+    text: Option<String>
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct EditorSelectionState {
+    main_selection_index: usize,
+    selections: Vec<EditorSelection>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct EditorSelectionReplacement {
+    index: usize,
+    text: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct EditorState {
+    pub(crate) selection: EditorSelectionState,
+}
+
 impl Command {
     pub fn get_deno_module_specifier(&self) -> Result<ModuleSpecifier, ModuleResolutionError> {
         let module_path = PathBuf::from(self.location.as_str());

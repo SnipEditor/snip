@@ -4,9 +4,11 @@ import CodeMirror, {
   Extension,
   ReactCodeMirrorRef,
   ViewUpdate,
+  keymap
 } from '@uiw/react-codemirror'
+import {defaultKeymap} from '@codemirror/commands';
 import { langs } from '@uiw/codemirror-extensions-langs'
-import { useMemo, useState } from 'react'
+import {useEffect, useMemo, useState} from 'react'
 import useTheme from '../modules/useTheme.tsx'
 import {
   LanguageKey,
@@ -56,7 +58,10 @@ function CodeEditor() {
   } = useScriptCommandRunner(editorRef)
 
   const extensions = useMemo(() => {
-    const extensions: Extension[] = [EditorView.editable.of(!commandIsRunning)]
+    const extensions: Extension[] = [
+        keymap.of([...defaultKeymap]),
+        EditorView.editable.of(!commandIsRunning)
+    ]
     if (settings.wrap_lines) {
       extensions.push(EditorView.lineWrapping)
     }
@@ -69,6 +74,16 @@ function CodeEditor() {
   const theme = useTheme()
 
   const sortedLanguages = useSortedLanguages()
+    useEffect(() => {
+        if (!commandPickerIsOpen) {
+            editorRef?.view?.focus?.()
+        }
+    }, [commandPickerIsOpen])
+    useEffect(() => {
+        if (!commandIsRunning) {
+            editorRef?.view?.focus?.()
+        }
+    }, [commandIsRunning])
 
   return (
     <div className="grid size-full grid-rows-[1fr_auto]">
