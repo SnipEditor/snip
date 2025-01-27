@@ -21,6 +21,10 @@ export default function CommandStatus({
       return 'Select a command'
     }
     if (error) {
+      if (error.startsWith('Error: ')) {
+        // The default javascript Error.toString() already prepends our text with 'Error: '
+        return error
+      }
       return `Error: ${error}`
     }
     if (running) {

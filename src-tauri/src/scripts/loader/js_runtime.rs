@@ -1,12 +1,20 @@
+use crate::scripts::loader::scripts::Library;
 use deno_ast::{MediaType, ParseParams};
 use deno_core::anyhow::Error;
 use deno_core::error::AnyError;
 use deno_core::{
-    resolve_import, ModuleCodeString, ModuleLoadResponse, ModuleLoader, ModuleName,
-    ModuleSourceCode, ModuleSpecifier, RequestedModuleType, ResolutionKind, SourceMapData,
+    resolve_import, ModuleCodeString, ModuleLoadResponse, ModuleLoader, ModuleName, ModuleSource,
+    ModuleSourceCode, ModuleSpecifier, ModuleType, RequestedModuleType, ResolutionKind,
+    SourceMapData,
 };
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 
-pub struct SnipModuleLoader;
+pub struct SnipModuleLoader {
+    allowed_locations: Mutex<Vec<String>>,
+    libraries: HashMap<String, Library>,
+}
 
 impl ModuleLoader for SnipModuleLoader {
     fn resolve(
@@ -26,62 +34,139 @@ impl ModuleLoader for SnipModuleLoader {
         _requested_module_type: RequestedModuleType,
     ) -> ModuleLoadResponse {
         let module_specifier = module_specifier.clone();
+
         let module_load = move || {
-            let path = module_specifier.to_file_path().unwrap();
+            let mut path;
+            let module;
+            match module_specifier.scheme() {
+                "file" => {
+                    path = module_specifier.to_file_path().unwrap();
 
-            // Determine what the MediaType is (this is done based on the file
-            // extension) and whether transpiling is required.
-            let media_type = MediaType::from_path(&path);
-            let (module_type, should_transpile) = match MediaType::from_path(&path) {
-                MediaType::JavaScript | MediaType::Mjs | MediaType::Cjs => {
-                    (deno_core::ModuleType::JavaScript, false)
+                    if !self
+                        .allowed_locations
+                        .lock()
+                        .unwrap()
+                        .iter()
+                        .any(|location| path.starts_with(location))
+                    {
+                        return Err(Error::msg("Loading files from outside of the current script or the used libraries is not allowed"));
+                    }
+
+                    if MediaType::from_path(&path) == MediaType::Unknown {
+                        for ext in &["ts", "tsx", "js", "jsx"] {
+                            let new_path = path.with_extension(ext);
+                            if new_path.is_file() {
+                                path = new_path;
+                                break;
+                            }
+                        }
+                    }
+
+                    module = SnipModuleLoader::load_module_from_file(&module_specifier, &path)?;
                 }
-                MediaType::Jsx => (deno_core::ModuleType::JavaScript, true),
-                MediaType::TypeScript
-                | MediaType::Mts
-                | MediaType::Cts
-                | MediaType::Dts
-                | MediaType::Dmts
-                | MediaType::Dcts
-                | MediaType::Tsx => (deno_core::ModuleType::JavaScript, true),
-                MediaType::Json => (deno_core::ModuleType::Json, false),
-                _ => panic!("Unknown extension {:?}", path.extension()),
-            };
+                "lib" => {
+                    let path = module_specifier.path();
+                    let library_name = if path.starts_with("@") {
+                        path.split('/').take(2).collect::<Vec<&str>>().join("/")
+                    } else {
+                        path.split('/').next().unwrap().to_string()
+                    };
+                    let sub_path = path.strip_prefix(&library_name).unwrap().to_string();
+                    let library = self.libraries.get(&library_name).ok_or_else(|| {
+                        Error::msg(format!("Library not found: {}", library_name))
+                    })?;
+                    let location = library.get_location();
+                    let mut path = PathBuf::from(format!("{}{}", location, sub_path));
+                    self.allowed_locations
+                        .lock()
+                        .unwrap()
+                        .push(location.to_string());
 
-            // Read the file, transpile if necessary.
-            let code = std::fs::read_to_string(&path)?;
-            let code = if should_transpile {
-                let parsed = deno_ast::parse_module(ParseParams {
-                    specifier: module_specifier.clone(),
-                    text: code.into(),
-                    media_type,
-                    capture_tokens: false,
-                    scope_analysis: false,
-                    maybe_syntax: None,
-                })?;
-                let transpiled_source = parsed
-                    .transpile(
-                        &Default::default(),
-                        &Default::default(),
-                        &Default::default(),
-                    )?
-                    .into_source();
-                transpiled_source.text
-            } else {
-                code
-            };
+                    if path.is_dir() {
+                        path = path.join("index");
+                    }
+                    if !path.is_file() {
+                        for ext in &["ts", "tsx", "js", "jsx"] {
+                            let new_path = path.with_extension(ext);
+                            if new_path.is_file() {
+                                path = new_path;
+                                break;
+                            }
+                        }
+                    }
 
-            // Load and return module.
-            let module = deno_core::ModuleSource::new(
-                module_type,
-                ModuleSourceCode::String(code.into()),
-                &module_specifier,
-                None,
-            );
+                    module = SnipModuleLoader::load_module_from_file(&module_specifier, &path)?;
+                }
+                _ => {
+                    return Err(Error::msg(format!(
+                        "Unsupported scheme: {}",
+                        module_specifier.scheme()
+                    )))
+                }
+            }
             Ok(module)
         };
 
         ModuleLoadResponse::Sync(module_load())
+    }
+}
+
+impl SnipModuleLoader {
+    pub fn new(script_path: impl Into<String>, libraries: HashMap<String, Library>) -> Self {
+        SnipModuleLoader {
+            allowed_locations: Mutex::new(vec![script_path.into()]),
+            libraries,
+        }
+    }
+    fn load_module_from_file(
+        original_module_specifier: &ModuleSpecifier,
+        path: &Path,
+    ) -> Result<ModuleSource, Error> {
+        let module_specifier = ModuleSpecifier::from_file_path(path).unwrap();
+        let media_type = MediaType::from_path(path);
+        let should_transpile = match media_type {
+            MediaType::Jsx
+            | MediaType::TypeScript
+            | MediaType::Mts
+            | MediaType::Cts
+            | MediaType::Dts
+            | MediaType::Dmts
+            | MediaType::Dcts
+            | MediaType::Tsx => true,
+            MediaType::JavaScript | MediaType::Mjs | MediaType::Cjs => false,
+            _ => return Err(Error::msg("Unsupported or unknown media type")),
+        };
+
+        let code = std::fs::read_to_string(path)?;
+        let code = if should_transpile {
+            let parsed = deno_ast::parse_module(ParseParams {
+                specifier: module_specifier.clone(),
+                text: code.into(),
+                media_type,
+                capture_tokens: false,
+                scope_analysis: false,
+                maybe_syntax: None,
+            })?;
+            let transpiled_source = parsed
+                .transpile(
+                    &Default::default(),
+                    &Default::default(),
+                    &Default::default(),
+                )?
+                .into_source();
+            transpiled_source.text
+        } else {
+            code
+        };
+
+        // Load and return module.
+        Ok(ModuleSource::new_with_redirect(
+            ModuleType::JavaScript,
+            ModuleSourceCode::String(code.into()),
+            original_module_specifier,
+            &module_specifier,
+            None,
+        ))
     }
 }
 
