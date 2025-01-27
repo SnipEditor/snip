@@ -28,7 +28,7 @@
       "icons/icon.ico"
     ],
     "resources": [
-      "resources/scripts/commands/**/*"
+      "resources/scripts/**/*"
     ],
     "macOS": {
       "signingIdentity": "78305F70842FCB238E12B6283CA03A027BA0E815",

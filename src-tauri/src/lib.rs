@@ -44,7 +44,7 @@ pub fn run() {
 
             let script_directory = app
                 .path()
-                .resolve("resources/scripts/commands/", BaseDirectory::Resource)?;
+                .resolve("resources/scripts/", BaseDirectory::Resource)?;
             let mut script_manager = ScriptManager::new();
             let script_load_result = tauri::async_runtime::block_on(async {
                 script_manager.add_location(script_directory).await

@@ -1,6 +1,6 @@
 use crate::scripts::loader::js_runtime::{transpile_extension, SnipModuleLoader};
 use crate::scripts::loader::scripts::{
-    Command, EditorSelectionReplacement, EditorSelectionState, EditorState, ScriptManager,
+    Command, EditorSelectionReplacement, EditorSelectionState, EditorState, Library, ScriptManager,
 };
 use crate::window::{WindowTask, Windows};
 use deno_core::error::AnyError;
@@ -132,11 +132,14 @@ pub async fn run_script_command(
 
     let (sender, mut receiver) = channel::<InternalScriptRunEditorRequest>(1);
 
-    let command = {
+    let (command, libraries) = {
         let script_manager = &script_manager.lock().await;
-        script_manager
-            .find_command_by_id(command_id.as_str())
-            .cloned()
+        (
+            script_manager
+                .find_command_by_id(command_id.as_str())
+                .cloned(),
+            script_manager.get_libraries_snapshot(),
+        )
     };
 
     if command.is_none() {
@@ -150,6 +153,7 @@ pub async fn run_script_command(
                 &window_label,
                 WindowTask::Script(ScriptTask::RunCommand(
                     command.unwrap(),
+                    libraries,
                     sender,
                     editor_state,
                 )),
@@ -226,6 +230,7 @@ pub async fn reply_editor_request(
 pub enum ScriptTask {
     RunCommand(
         Command,
+        HashMap<String, Library>,
         mpsc::Sender<InternalScriptRunEditorRequest>,
         EditorState,
     ),
@@ -494,11 +499,15 @@ async fn load_and_run_module(js_runtime: &mut JsRuntime, command: Command) -> Re
 
 pub async fn handle_script_run(
     command: Command,
+    libraries: HashMap<String, Library>,
     editor_request_channel: mpsc::Sender<InternalScriptRunEditorRequest>,
     editor_state: EditorState,
 ) {
     let mut js_runtime = JsRuntime::new(RuntimeOptions {
-        module_loader: Some(Rc::new(SnipModuleLoader)),
+        module_loader: Some(Rc::new(SnipModuleLoader::new(
+            command.get_location(),
+            libraries,
+        ))),
         extension_transpiler: Some(Rc::new(transpile_extension)),
         extensions: vec![snip::init_ops_and_esm()],
         ..Default::default()
@@ -532,9 +541,9 @@ pub async fn handle_script_run(
 
 pub async fn handle_script_task(event: ScriptTask) {
     match event {
-        ScriptTask::RunCommand(command, editor_request_channel, editor_state) => {
+        ScriptTask::RunCommand(command, libraries, editor_request_channel, editor_state) => {
             println!("Running command {}", command.id);
-            handle_script_run(command, editor_request_channel, editor_state).await
+            handle_script_run(command, libraries, editor_request_channel, editor_state).await
         }
     }
 }
