@@ -1,0 +1,8 @@
+{
+    "name": "url_encode",
+    "title": "URL Encode",
+    "description": "Encodes text as URL entities",
+    "version": 1,
+    "api": 1,
+    "entryPoint": "./index.ts"
+  }
