@@ -1,3 +1,13 @@
 {
-  "include": ["./global.d.ts"]
+  "compilerOptions": {
+    "typeRoots": ["./"],
+    "types": [],
+    "lib": ["es2015"],
+    "baseUrl": ".",
+    "paths": {
+      "lib:@snip/*": ["./library/@snip/*"] // Map the custom import to the local path
+    },
+    "allowImportingTsExtensions": true
+  },
+  "include": ["./global.d.ts", "./**/*.ts"]
 }

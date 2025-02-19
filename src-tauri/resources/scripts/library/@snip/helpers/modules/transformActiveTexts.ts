@@ -1,4 +1,4 @@
-export default async function transformActiveTexts(transformFunc: (text: string) => string | Promise<string>) {
+export default async function transformActiveTexts(transformFunc: (text: string) => string | Promise<string>){
     const selectionState = await Editor.getSelectionState()
     if (selectionState.hasSelection()) {
         const selections = selectionState.getSelections()
@@ -14,7 +14,7 @@ export default async function transformActiveTexts(transformFunc: (text: string)
                 })
             )
         } catch (e) {
-            await Editor.setError(e.toString())
+            await Editor.setError(String(e))
             return
         }
         await Editor.replaceSelections(replacements)
@@ -24,7 +24,7 @@ export default async function transformActiveTexts(transformFunc: (text: string)
         try {
             result = await transformFunc(source)
         } catch (e) {
-            await Editor.setError(e.toString())
+            await Editor.setError(String(e))
             return
         }
         await Editor.setFullText(result)

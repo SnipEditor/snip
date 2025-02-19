@@ -1,0 +1,18 @@
+{
+    "tasks": {
+        "test": "deno test --allow-read --unstable-sloppy-imports"
+    },
+    "imports": {
+      "lib:@snip/helpers": "./library/@snip/helpers"
+    },
+    "test": {
+        "include": [
+            "tests/*"
+        ]
+    },
+    "compilerOptions": {
+        "types": [
+            "./global.d.ts"
+        ]
+    }
+}
