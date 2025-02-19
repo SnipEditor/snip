@@ -1,0 +1,8 @@
+{
+    "name": "decode_jwt",
+    "title": "Decode JWT",
+    "description": "Decodes a JWT token",
+    "version": 1,
+    "api": 1,
+    "entryPoint": "./index.ts"
+  }
