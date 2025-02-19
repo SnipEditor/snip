@@ -4,7 +4,8 @@
     },
     "imports": {
       "lib:@snip/helpers": "./library/@snip/helpers",
-      "lib:js-yaml": "./library/js-yaml"
+      "lib:js-yaml": "./library/js-yaml",
+      "lib:papaparse": "./library/papaparse"
     },
     "test": {
         "include": [

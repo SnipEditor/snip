@@ -1,0 +1,8 @@
+{
+  "name": "csv_to_json",
+  "title": "CSV to JSON",
+  "description": "Converts CSV to JSON",
+  "version": 1,
+  "api": 1,
+  "entryPoint": "./index.ts"
+}
