@@ -1,0 +1,8 @@
+{
+    "name": "sort_json",
+    "title": "Sort JSON",
+    "description": "Sorts JSON object keys alphabetically",
+    "version": 1,
+    "api": 1,
+    "entryPoint": "./index.ts"
+  }
