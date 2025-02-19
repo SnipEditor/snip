@@ -4,7 +4,9 @@ use crate::scripts::loader::scripts::{
 };
 use crate::window::{WindowTask, Windows};
 use deno_core::error::AnyError;
-use deno_core::{extension, op2, v8, JsRuntime, OpState, Resource, ResourceId, RuntimeOptions};
+use deno_core::{
+    extension, op2, v8, ByteString, JsRuntime, OpState, Resource, ResourceId, RuntimeOptions,
+};
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -441,6 +443,22 @@ async fn snip_op_replace_selections(
     Ok(())
 }
 
+#[op2]
+#[serde]
+fn op_base64_atob(#[serde] mut s: ByteString) -> Result<ByteString, AnyError> {
+    let decoded_len = base64_simd::forgiving_decode_inplace(&mut s)
+        .map_err(|_| AnyError::msg("Invalid base64"))?
+        .len();
+    s.truncate(decoded_len);
+    Ok(s)
+}
+
+#[op2]
+#[string]
+fn op_base64_btoa(#[serde] s: ByteString) -> String {
+    base64_simd::STANDARD.encode_to_string(s.as_ref())
+}
+
 extension!(
     snip,
     ops = [
@@ -450,6 +468,8 @@ extension!(
         snip_op_get_partial_text,
         snip_op_get_selection_state,
         snip_op_replace_selections,
+        op_base64_atob,
+        op_base64_btoa,
     ],
     esm_entry_point = "ext:snip/index.ts",
     esm = [dir "js_runtime/snip", "index.ts"]

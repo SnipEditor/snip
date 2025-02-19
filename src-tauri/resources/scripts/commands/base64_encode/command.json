@@ -1,0 +1,8 @@
+{
+    "name": "base64_encode",
+    "title": "Base64 Encode",
+    "description": "Encodes text as Base64",
+    "version": 1,
+    "api": 1,
+    "entryPoint": "./index.ts"
+  }

@@ -121,4 +121,26 @@
     }
     // @ts-ignore
     globalThis.Editor = new Editor()
+
+
+    /**
+     * @param {string} data
+     * @returns {string}
+     */
+    function atob(data: string): string {
+        // @ts-ignore
+        return Deno.core.ops.op_base64_atob(data);
+    }
+
+    /**
+     * @param {string} data
+     * @returns {string}
+     */
+    function btoa(data: string): string {
+        // @ts-ignore
+        return Deno.core.ops.op_base64_btoa(data);
+    }
+
+    globalThis.atob = atob
+    globalThis.btoa = btoa
 })()
