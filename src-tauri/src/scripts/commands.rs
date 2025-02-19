@@ -488,13 +488,34 @@ async fn load_and_run_module(js_runtime: &mut JsRuntime, command: Command) -> Re
         .map_err(|e| format!("Could not load module: {}", e))?;
 
     let result = js_runtime.mod_evaluate(module_id);
-
     js_runtime
         .run_event_loop(Default::default())
         .await
         .map_err(|e| format!("Uncaught error: {}", e))?;
 
-    result.await.map_err(|e| format!("Uncaught error: {}", e))
+    result.await.map_err(|e| format!("Uncaught error: {}", e))?;
+
+    let namespace = js_runtime
+        .get_module_namespace(module_id)
+        .map_err(|e| format!("Uncaught error: {}", e))?;
+    {
+        let mut scope = js_runtime.handle_scope();
+        let namespace = v8::Local::new(&mut scope, namespace);
+        let default = v8::String::new(&mut scope, "default").unwrap();
+        let default_export = namespace.get(&mut scope, default.into()).unwrap();
+        if !default_export.is_function() {
+            return Err("Module should contain a function as default export".to_string());
+        }
+        let default_export = v8::Local::<v8::Function>::try_from(default_export).unwrap();
+        default_export
+            .call(&mut scope, namespace.into(), &[])
+            .unwrap();
+    }
+
+    js_runtime
+        .run_event_loop(Default::default())
+        .await
+        .map_err(|e| format!("Uncaught error: {}", e))
 }
 
 pub async fn handle_script_run(
