@@ -11,9 +11,9 @@ export const expectOutputForInput = async (module: () => void | Promise<void>, i
     await module()
     
     // @ts-ignore
-    expect(globalThis.editorMock.fullText).toBe(expectedOutput)
-    // @ts-ignore
     expect(globalThis.editorMock.error).toBe(undefined)
+    // @ts-ignore
+    expect(globalThis.editorMock.fullText).toBe(expectedOutput)
 }
 
 export const expectInputGivesError = async (module: () => void | Promise<void>, input: string, expectedErrorOutput: string) => {
