@@ -1,0 +1,8 @@
+{
+    "name": "html_decode",
+    "title": "HTML Decode",
+    "description": "Decodes HTML entities",
+    "version": 1,
+    "api": 1,
+    "entryPoint": "./index.ts"
+  }
