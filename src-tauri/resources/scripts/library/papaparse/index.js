@@ -1,5 +1,6 @@
 // Copied from https://github.com/mholt/PapaParse/blob/master/papaparse.js
 // License: MIT
+// Copyright (c) 2015 Matthew Holt
 // 
 // Changes from the original:
 // - AMD and CommonJS exports are removed, instead an esm module is exported
