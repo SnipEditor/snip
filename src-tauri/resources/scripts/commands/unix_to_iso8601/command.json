@@ -1,0 +1,8 @@
+{
+    "name": "unix_to_iso8601",
+    "title": "Unix to ISO 8601",
+    "description": "Converts a Unix timestamp to an ISO 8601 date",
+    "version": 1,
+    "api": 1,
+    "entryPoint": "./index.ts"
+}
