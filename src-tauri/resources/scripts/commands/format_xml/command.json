@@ -1,0 +1,8 @@
+{
+    "name": "format_xml",
+    "title": "Format XML",
+    "description": "Formats XML with proper indentation",
+    "version": 1,
+    "api": 1,
+    "entryPoint": "./index.ts"
+}

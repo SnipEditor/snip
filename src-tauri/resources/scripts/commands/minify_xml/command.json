@@ -1,0 +1,8 @@
+{
+    "name": "minify_xml",
+    "title": "Minify XML",
+    "description": "Minifies XML by removing unnecessary whitespace",
+    "version": 1,
+    "api": 1,
+    "entryPoint": "./index.ts"
+}
