@@ -30,6 +30,7 @@ export default function SearchOverlay({
   const [matchingScripts, setMatchingScripts] = useState<CommandSearchResult[]>(
     [],
   )
+  const [selectedIndex, setSelectedIndex] = useState<number>(0)
 
   return (
     <div
@@ -41,7 +42,7 @@ export default function SearchOverlay({
           type="text"
           placeholder="Start typing..."
           className="w-full rounded-xl border-2 border-theme-600 bg-theme-50 p-2 px-3 text-lg text-theme-950 placeholder:text-theme-600 focus:border-theme-800 focus:outline-none"
-          // onBlur={onClose}
+          spellCheck={false}
           onKeyUp={(e) => {
             switch (e.key) {
               case 'Escape':
@@ -49,9 +50,17 @@ export default function SearchOverlay({
                 break
               case 'Enter':
                 if (matchingScripts.length > 0) {
-                  void onRunCommand(matchingScripts[0].command.id)
+                  void onRunCommand(matchingScripts[selectedIndex].command.id)
                   onClose()
                 }
+                break
+              case 'ArrowUp':
+                setSelectedIndex((prevIndex) => Math.max(prevIndex - 1, 0))
+                break
+              case 'ArrowDown':
+                setSelectedIndex((prevIndex) =>
+                  Math.min(prevIndex + 1, matchingScripts.length - 1),
+                )
                 break
               default:
             }
@@ -63,9 +72,10 @@ export default function SearchOverlay({
               return
             }
             invoke('get_script_commands', { searchTerm: e.target.value })
-              .then((scripts) =>
-                setMatchingScripts(scripts as CommandSearchResult[]),
-              )
+              .then((scripts) => {
+                setMatchingScripts(scripts as CommandSearchResult[])
+                setSelectedIndex(0)
+              })
               .catch((e) => {
                 console.warn('Error while searching for scripts', e)
                 setMatchingScripts([])
@@ -80,9 +90,11 @@ export default function SearchOverlay({
                 const isLast = index === matchingScripts.length - 1
                 return (
                   <a
+                    key={searchResult.command.id}
                     className={cn(
                       'block cursor-pointer text-theme-950 hover:bg-theme-200 snap-start',
                       !isLast && 'border-b-[1px] border-theme-600',
+                      index === selectedIndex && 'bg-theme-300',
                     )}
                     onClick={() => {
                       void onRunCommand(searchResult.command.id)
