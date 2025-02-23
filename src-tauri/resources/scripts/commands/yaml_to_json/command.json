@@ -1,0 +1,8 @@
+{
+  "name": "yaml_to_json",
+  "title": "YAML to JSON",
+  "description": "Converts YAML to JSON",
+  "version": 1,
+  "api": 1,
+  "entryPoint": "./index.ts"
+}

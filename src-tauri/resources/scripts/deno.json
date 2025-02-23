@@ -1,0 +1,22 @@
+{
+    "tasks": {
+        "test": "deno test --allow-read --unstable-sloppy-imports"
+    },
+    "imports": {
+      "lib:@snip/helpers": "./library/@snip/helpers",
+      "lib:js-yaml": "./library/js-yaml",
+      "lib:papaparse": "./library/papaparse",
+      "lib:he": "./library/he",
+      "lib:jshashes": "./library/jshashes"
+    },
+    "test": {
+        "include": [
+            "tests/*"
+        ]
+    },
+    "compilerOptions": {
+        "types": [
+            "./global.d.ts"
+        ]
+    }
+}

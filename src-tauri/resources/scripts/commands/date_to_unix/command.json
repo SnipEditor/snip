@@ -1,0 +1,8 @@
+{
+    "name": "date_to_unix",
+    "title": "Date to Unix",
+    "description": "Converts any date format to a Unix timestamp",
+    "version": 1,
+    "api": 1,
+    "entryPoint": "./index.ts"
+}

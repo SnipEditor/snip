@@ -1,0 +1,8 @@
+{
+    "name": "html_encode",
+    "title": "HTML Encode",
+    "description": "Encodes text as HTML entities",
+    "version": 1,
+    "api": 1,
+    "entryPoint": "./index.ts"
+  }

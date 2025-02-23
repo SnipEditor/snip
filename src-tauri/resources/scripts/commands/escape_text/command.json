@@ -1,0 +1,8 @@
+{
+    "name": "escape_text",
+    "title": "Escape Text",
+    "description": "Escapes special characters in text",
+    "version": 1,
+    "api": 1,
+    "entryPoint": "./index.ts"
+}
