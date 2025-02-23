@@ -6,7 +6,8 @@
       "lib:@snip/helpers": "./library/@snip/helpers",
       "lib:js-yaml": "./library/js-yaml",
       "lib:papaparse": "./library/papaparse",
-      "lib:he": "./library/he"
+      "lib:he": "./library/he",
+      "lib:jshashes": "./library/jshashes"
     },
     "test": {
         "include": [

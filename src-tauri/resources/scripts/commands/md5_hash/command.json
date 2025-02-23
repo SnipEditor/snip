@@ -1,0 +1,8 @@
+{
+    "name": "md5_hash",
+    "title": "MD5 Hash",
+    "description": "Generates an MD5 hash and appends it to the input",
+    "version": 1,
+    "api": 1,
+    "entryPoint": "./index.ts"
+}

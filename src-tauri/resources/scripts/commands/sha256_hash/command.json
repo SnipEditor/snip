@@ -1,0 +1,8 @@
+{
+    "name": "sha256_hash",
+    "title": "SHA-256 Hash",
+    "description": "Generates a SHA-256 hash and appends it to the input",
+    "version": 1,
+    "api": 1,
+    "entryPoint": "./index.ts"
+}
