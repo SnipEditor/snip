@@ -27,7 +27,9 @@ export default function SearchOverlay({
   onClose,
   onRunCommand,
 }: SearchOverlayProps) {
-  const [matchingScripts, setMatchingScripts] = useState<CommandSearchResult[]>([])
+  const [matchingScripts, setMatchingScripts] = useState<CommandSearchResult[]>(
+    [],
+  )
   const [selectedIndex, setSelectedIndex] = useState<number>(0)
 
   return (
@@ -56,7 +58,9 @@ export default function SearchOverlay({
                 setSelectedIndex((prevIndex) => Math.max(prevIndex - 1, 0))
                 break
               case 'ArrowDown':
-                setSelectedIndex((prevIndex) => Math.min(prevIndex + 1, matchingScripts.length - 1))
+                setSelectedIndex((prevIndex) =>
+                  Math.min(prevIndex + 1, matchingScripts.length - 1),
+                )
                 break
               default:
             }
@@ -90,7 +94,7 @@ export default function SearchOverlay({
                     className={cn(
                       'block cursor-pointer text-theme-950 hover:bg-theme-200 snap-start',
                       !isLast && 'border-b-[1px] border-theme-600',
-                      index === selectedIndex && 'bg-theme-300'
+                      index === selectedIndex && 'bg-theme-300',
                     )}
                     onClick={() => {
                       void onRunCommand(searchResult.command.id)
